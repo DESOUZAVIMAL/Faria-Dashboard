@@ -248,8 +248,8 @@ Snoozed items return at **06:00 next morning** — not "24 hours later". Ensures
 
 ### 🔴 High Priority — Build Next
 - [ ] **Week view heatmap** — 7-column grid (days) × 24 rows (hours), cell color = # people free. "Best slots this week" ranked list below grid. Click cell → jump to that day's Gantt. *(User requested: "i dont see month week that we discussed")*
-- [ ] **Gmail connector** — Gmail API poller: `to:me`, skip no-reply/promotions, push to `/api/ingest`
-- [ ] **Slack connector** — Slack Events API: DMs + @mentions + whitelisted channels, push to `/api/ingest`
+- [ ] **Gmail connector** — Gmail API **polling every 5 min** (personal): `to:me`, skip no-reply/promotions, push to `/api/ingest`. Company scale → Pub/Sub push. See §6.5.
+- [ ] **Slack connector** — Slack Events API via **Socket Mode** (personal, real-time, no public URL): DMs + @mentions + whitelisted channels, push to `/api/ingest`. Company scale → Events API over HTTP. See §6.5.
 - [ ] **Zendesk connector** — Poll `/tickets?assignee_id=me&status=open`, push to `/api/ingest`
 
 ### 🟠 Medium Priority
@@ -308,6 +308,67 @@ for (const item of items) {
 
 ---
 
+## 6.5 Connector Transport Research (How to Get Data In)
+
+> Research done Jun 2026 on the safest + most effective way to pull data from Slack, Gmail,
+> and other tools into the dashboard. Conclusion: **different transport for personal vs company scale,
+> but the same `/api/ingest` endpoint and `rules.js` engine serve both — only the connector layer swaps.**
+
+### The three transport types
+| Method | How it works | Needs public URL? | Real-time? | Notes |
+|---|---|---|---|---|
+| **API Polling** | Your server asks "anything new?" on a timer | ❌ No | ❌ ~2–5 min lag | Simplest; wastes quota at scale |
+| **Webhooks / Push** | The source pushes to your server on each event | ✅ Yes | ✅ Instant | Needs deployment + public HTTPS |
+| **WebSocket (Socket Mode)** | Your server opens a persistent outbound connection; events stream down | ❌ **No** | ✅ Instant | Slack-only; works on localhost/firewall |
+| **MCP** | Protocol for AI assistants to use tools | — | — | ❌ Not a data-connector mechanism — not used here |
+
+### Gmail options
+| Method | Real-time? | Public URL? | Effort | Best for |
+|---|---|---|---|---|
+| **API Polling** (`messages.list`) | ~5 min lag | ❌ No | Low | **Personal version (now)** |
+| **Pub/Sub Push** (`users.watch`) | 1–10 sec | ✅ Yes | High — needs Cloud project, Pub/Sub topic, and **watch renewal every 7 days** (cron) | Company/deployed |
+| Apps Script trigger | ~1–5 min | ❌ No | Medium | No-server hack |
+| iPaaS (Zapier/Make) | seconds | ❌ No | Lowest | Non-technical, low volume |
+
+### Slack options
+| Method | Real-time? | Public URL? | Effort | Best for |
+|---|---|---|---|---|
+| **Socket Mode** (Events API over WebSocket) | Instant | ❌ **No** | Medium | **Personal version (now)** ⭐ |
+| **Events API over HTTP** | Instant | ✅ Yes | Medium | Company/deployed/Marketplace |
+| **Web API Polling** (`conversations.history`) | ~2 min lag | ❌ No | Low | Simple fallback |
+| Incoming Webhooks | — | — | — | ❌ Only for *posting TO* Slack, not reading |
+| RTM API | — | — | — | ❌ Deprecated — do not use |
+
+### Key insights from the research
+- **Slack can be real-time on localhost TODAY** via Socket Mode — a persistent outbound WebSocket, no public URL, works behind a firewall. This is why we don't need to deploy first to get live Slack events.
+- **Gmail cannot easily do push on localhost** — Pub/Sub needs a public HTTPS endpoint. Gmail stays on polling until deployed.
+- **Slack "Events API" is the *what* (the events); HTTP vs Socket Mode is the *how* (delivery).** Same events, two transports.
+- ⚠️ **Socket Mode apps cannot be published to the Slack Marketplace**, but CAN be deployed org-wide on Enterprise Grid. So: Socket Mode for internal/personal, HTTP for public distribution.
+- **Polling is fine at personal scale** (Gmail allows ~1M quota units/day). It only becomes wasteful when polling many accounts — that's when you switch to push.
+
+### Recommended setup by scale
+**Personal / self version (build now — no deployment, no public URL):**
+```
+Gmail  →  API polling every 5 min   (reuse existing Google OAuth, add gmail.readonly scope)
+Slack  →  Socket Mode (real-time)    (one bot token + one app token, works on localhost)
+```
+**Company / large-scale version (later, when deployed):**
+```
+Gmail  →  Pub/Sub push (users.watch) + 7-day renewal cron
+Slack  →  Events API over HTTP (public endpoint, Marketplace-ready)
+Add    →  SQLite/Postgres, job queue, per-user token storage
+```
+The migration path is clean: **`/api/ingest` and `rules.js` never change** — only the connector layer swaps poll → push.
+
+### Sources
+- [Comparing HTTP & Socket Mode — Slack Docs](https://docs.slack.dev/apis/events-api/comparing-http-socket-mode/)
+- [Using Socket Mode — Slack Docs](https://docs.slack.dev/apis/events-api/using-socket-mode/)
+- [Slack API Integration Guide 2026 — getknit.dev](https://www.getknit.dev/blog/slack-api-integration-guide)
+- [Gmail API Push Notifications Guide 2026 — Unipile](https://www.unipile.com/gmail-api-push-notifications/)
+- [Configure push notifications in Gmail API — Google](https://developers.google.com/workspace/gmail/api/guides/push)
+
+---
+
 ## 7. Key Decisions Log
 
 | Date | Decision | Why |
@@ -322,6 +383,9 @@ for (const item of items) {
 | Jun 2026 | Scrubbed `@company.com` from demo files | Privacy; repo private but good practice; all demo data uses `@example.com` |
 | Jun 2026 | Vanilla JS, no framework | Zero build step, easy iteration, easy handoff |
 | Jun 2026 | Filter at connector level, not in AI | Privacy: only relevant items leave the source system; AI never sees noise |
+| Jun 2026 | Personal connectors: Gmail polling + Slack Socket Mode | Both work on localhost with NO public URL; real-time Slack today, near-real-time Gmail. See §6.5 |
+| Jun 2026 | MCP is NOT used for data connectors | MCP is for AI assistants to use tools, not for pulling app data; wrong tool for this job |
+| Jun 2026 | Company scale: Gmail Pub/Sub push + Slack HTTP Events API | Polling wastes quota across many accounts; push scales. Migration only touches connector layer |
 
 ---
 
