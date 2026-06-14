@@ -14,7 +14,7 @@
 ## 1. Product Vision & Problem Statement
 
 ### The Problem
-Professionals use 5–10 tools daily: Slack, Gmail, Zendesk, Google Sheets, Google Calendar, Zoom. The result:
+Professionals use 5–10 tools daily: Slack, Gmail, Zendesk, Google Sheets, Google Calendar. The result:
 - You see a Slack message and forget to reply
 - An email sits because you "meant to get to it"
 - A Zendesk ticket was assigned — you never noticed
@@ -216,7 +216,6 @@ POST /api/ingest?token=YOUR_INGEST_TOKEN
 | **Slack** | `message.im` (DMs) + `app_mention` events + specific whitelisted channel IDs |
 | **Zendesk** | `assignee_id=me` + `status=open OR pending` |
 | **Google Sheets** | Apps Script: only rows where "Owner" column = your email |
-| **Zoom** | Webhook on recording complete → meeting notes auto-import |
 
 ### 4.3 AI Role — Narrow and Optional
 AI does NOT decide what to show. `rules.js` does that. AI only:
@@ -261,7 +260,6 @@ Snoozed items return at **06:00 next morning** — not "24 hours later". Ensures
 
 ### 🔵 Lower Priority / Ideas
 - [ ] Google Sheets connector (Apps Script → ingest)
-- [ ] Zoom webhook → auto meeting notes
 - [ ] Mobile-responsive layout (currently desktop-only)
 - [ ] Dark mode toggle
 - [ ] Per-user working hours config (currently hardcoded 9–18)
@@ -291,7 +289,7 @@ for (const item of items) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user: "you@yourcompany.com",
-      src: "gmail",           // gmail | slack | zendesk | sheets | zoom
+      src: "gmail",           // gmail | slack | zendesk | sheets
       from: item.sender,
       text: item.subject + " " + item.snippet,
       link: `https://mail.google.com/mail/u/0/#inbox/${item.id}`,

@@ -14,7 +14,6 @@ A multifunctional remote-work hub for distributed teams, built around one idea: 
 **Meeting memory (the assistant)**
 - Every meeting can hold notes + action items (with owner and done/open status)
 - Meetings with the same title & people form a *series*; before the next one, click **Prep brief** → AI writes: what was discussed last time, what got done, what's still open, suggested agenda
-- **Zoom auto-capture**: when a cloud recording finishes, Zoom pings this app, which downloads the transcript, has AI summarize it into notes + action items, and attaches them to the right meeting — zero typing
 
 **Slack layer**
 - Channel notification when a meeting is requested / confirmed (with calendar link) / declined
@@ -27,7 +26,6 @@ A multifunctional remote-work hub for distributed teams, built around one idea: 
 
 ```
 Google Calendar ──(FreeBusy / Events API)──┐
-Zoom ──(recording.completed webhook)───────┤
 Gemini / Claude ──(summaries & briefs)─────┼──► TimeSync server ──► browser UI
 Slack ◄──(incoming webhook notifications)──┘        (Node.js)
 ```
@@ -40,7 +38,7 @@ One server. Employees install nothing — they open the URL and sign in with the
 2. `cp .env.example .env` and fill in the Google credentials + a JWT secret.
 3. `npm install && npm start` → open http://localhost:3000 → sign in.
 
-Each optional integration (Gemini, Slack, Zoom) is a single `.env` value — instructions are inline in `.env.example`.
+Each optional integration (Gemini, Slack) is a single `.env` value — instructions are inline in `.env.example`.
 
 ## Hosting (so it doesn't depend on you)
 
@@ -60,7 +58,6 @@ Your laptop is only for development. For real use, the app must run on an always
 
 - OAuth consent screen type "Internal" + `ALLOWED_DOMAIN` → only company accounts can sign in
 - Calendar access is **busy/free blocks only** via FreeBusy — the app never reads other people's event titles
-- Zoom webhook is verified with Zoom's HMAC secret token handshake
 - Refresh tokens live server-side in the database; serve over HTTPS in production
 
 ## v2 ideas
