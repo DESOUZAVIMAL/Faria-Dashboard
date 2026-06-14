@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TimeSync — Enhanced (vanilla) prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#F6F8FB; --card:#FFFFFF; --ink:#0F172A; --ink2:#334155; --mut:#64748B;
+    --line:#E6EAF1; --accent:#2563EB; --accent-soft:#EFF4FF;
+    --reply:#F59E0B; --reply-soft:#FEF6E7; --finish:#EF4444; --finish-soft:#FEEEEE;
+    --fyi:#3B82F6; --fyi-soft:#EAF2FF; --free:#10B981; --free-soft:#E8F8F1;
+    --radius:16px; --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 0 60px}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(246,248,251,.85);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:22px}
+  .topbar .wrap{display:flex;align-items:center;gap:18px}
+  .logo{font-family:'Space Grotesk';font-weight:700;font-size:19px;letter-spacing:-.3px}
+  .logo span{color:var(--accent)}
+  .clocks{margin-left:auto;display:flex;gap:16px;font-size:12.5px;color:var(--mut)}
+  .clocks b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .me{display:flex;align-items:center;gap:9px;padding-left:16px;border-left:1px solid var(--line)}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#7C3AED);
+    color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+
+  /* hero brief */
+  .brief{background:linear-gradient(120deg,#FFFFFF 0%,#F3F7FF 100%);border:1px solid var(--line);
+    border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);margin-bottom:22px}
+  .brief .row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .brief h2{font-size:18px}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.6px;padding:3px 9px;border-radius:99px}
+  .badge.rules{background:var(--accent-soft);color:var(--accent)}
+  .brief p{font-size:14px;color:var(--ink2);max-width:80ch}
+  .brief b{color:var(--ink)}
+  .pills{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .pill{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:#fff}
+  .pill .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow);margin-bottom:20px}
+  .card h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card h3 .count{font-size:11px;font-weight:700;color:var(--mut);background:var(--bg);padding:2px 8px;border-radius:99px}
+
+  /* agenda */
+  .ag{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .ag:first-of-type{border-top:none}
+  .ag .t{font-weight:700;font-size:12px;min-width:92px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .ag .body{flex:1}
+  .ag .ttl{font-weight:600}
+  .ag .sub{font-size:11.5px;color:var(--mut);margin-top:1px}
+  .ag.free .ttl{color:var(--free);font-weight:600}
+  .ag.free{background:linear-gradient(90deg,var(--free-soft),transparent);border-radius:8px;margin:2px -8px;padding:10px 8px}
+  .tag{font-size:10px;font-weight:700;border-radius:99px;padding:2px 9px;white-space:nowrap;align-self:flex-start}
+  .tag.confirmed{background:var(--free-soft);color:#047857}
+  .tag.pending{background:var(--reply-soft);color:#B45309}
+  .tag.cal{background:var(--bg);color:var(--mut);border:1px solid var(--line)}
+
+  /* tasks */
+  .task{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .task:first-of-type{border-top:none}
+  .task input{width:16px;height:16px;accent-color:var(--free)}
+  .task .est{font-size:11px;color:var(--mut);margin-left:auto}
+  .slot{font-size:10.5px;font-weight:600;color:var(--free);background:var(--free-soft);
+    border:1px solid #BBF0DA;border-radius:99px;padding:3px 9px;cursor:pointer}
+  .task.done .txt{text-decoration:line-through;color:var(--mut)}
+
+  /* inbox */
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:99px;
+    border:1px solid var(--line);background:#fff;color:var(--mut);cursor:pointer;transition:.15s}
+  .tab:hover{border-color:#cdd5e3}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .ibx{display:flex;gap:13px;padding:14px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .ibx:first-of-type{border-top:none}
+  .src{font-size:10px;font-weight:700;color:#fff;border-radius:7px;padding:4px 8px;height:fit-content;letter-spacing:.3px}
+  .src.slack{background:#611f69}.src.gmail{background:#ea4335}.src.zendesk{background:#03363d}
+  .src.sheets{background:#0f9d58}.src.timesync{background:#2563EB}
+  .ibx .body{flex:1}
+  .ibx .from{font-weight:700}
+  .ibx .txt{color:var(--ink2);margin-top:2px}
+  .meta{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .chip{font-size:10px;font-weight:700;border-radius:99px;padding:3px 9px}
+  .chip.reply{background:var(--reply-soft);color:#B45309}
+  .chip.finish{background:var(--finish-soft);color:#B91C1C}
+  .chip.fyi{background:var(--fyi-soft);color:#1D4ED8}
+  .due{font-size:11px;font-weight:600;color:var(--finish)}
+  .ago{font-size:11px;color:var(--mut)}
+  .act{margin-left:auto;display:flex;gap:6px}
+  .btn{font-family:inherit;font-size:11.5px;font-weight:600;border:1px solid var(--line);
+    background:#fff;color:var(--ink2);border-radius:9px;padding:6px 11px;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:#cdd5e3}
+  .btn.done{background:var(--free);color:#fff;border-color:var(--free)}
+
+  /* week heatmap */
+  .heat{display:grid;grid-template-columns:54px repeat(7,1fr);gap:4px;margin-top:6px}
+  .heat .h{font-size:10.5px;font-weight:700;color:var(--mut);text-align:center;padding:4px 0}
+  .heat .hr{font-size:10.5px;color:var(--mut);text-align:right;padding-right:8px;line-height:26px;font-variant-numeric:tabular-nums}
+  .cell{height:26px;border-radius:6px;background:var(--bg);cursor:pointer;transition:.12s;position:relative}
+  .cell:hover{transform:scale(1.12);box-shadow:0 2px 8px rgba(37,99,235,.25);z-index:2}
+  .legend{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mut);margin-top:14px}
+  .legend .sw{width:18px;height:12px;border-radius:3px}
+  .best{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .best .b{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px}
+  .best .rank{width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+    font-weight:700;font-size:11px;display:grid;place-items:center}
+  .best .when{font-weight:600}.best .who{color:var(--mut);font-size:11.5px;margin-left:auto}
+  .secthead{display:flex;align-items:center;gap:10px;margin:6px 0 16px}
+  .secthead h2{font-size:17px}
+  .note{font-size:12px;color:var(--mut);margin-top:4px}
+</style>
+</head>
+<body>
+  <div class="topbar"><div class="wrap">
+    <div class="logo">Time<span>Sync</span></div>
+    <div class="clocks">
+      <div>🇸🇬 Mei <b>19:32</b></div>
+      <div>🇮🇳 Arjun <b>17:02</b></div>
+      <div>🇬🇧 Sarah <b>12:32</b></div>
+      <div>🇺🇸 Lisa <b>07:32</b></div>
+    </div>
+    <div class="me"><div class="avatar">AC</div><div style="font-size:13px;font-weight:600">Alex Chen</div></div>
+  </div></div>
+
+  <div class="wrap">
+    <!-- BRIEF -->
+    <div class="brief">
+      <div class="row"><h2>Good evening, Alex 👋</h2><span class="badge rules">RULES</span></div>
+      <p>You have <b>3 replies waiting</b>, <b>4 things to finish</b> (2 due today), and 2 FYIs.
+         Your next meeting is <b>Weekly design sync at 13:00</b>. There's a <b>2.5-hour free block</b>
+         this morning — good for the Q3 budget numbers Lisa is waiting on.</p>
+      <div class="pills">
+        <span class="pill"><span class="dot" style="background:var(--reply)"></span>3 Needs reply</span>
+        <span class="pill"><span class="dot" style="background:var(--finish)"></span>4 To finish</span>
+        <span class="pill"><span class="dot" style="background:var(--fyi)"></span>2 FYI</span>
+        <span class="pill"><span class="dot" style="background:var(--free)"></span>3.5 h free today</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div>
+        <div class="card">
+          <h3>Today's agenda</h3>
+          <div class="ag"><div class="t">09:30–10:30</div><div class="body"><div class="ttl">Standup</div><div class="sub">Google Calendar</div></div><span class="tag cal">cal</span></div>
+          <div class="ag free"><div class="t">10:30–13:00</div><div class="body"><div class="ttl">Free — 2.5 h open</div><div class="sub">good window for deep work</div></div></div>
+          <div class="ag"><div class="t">13:00–13:30</div><div class="body"><div class="ttl">Weekly design sync</div><div class="sub">with Mei, Arjun</div></div><span class="tag confirmed">confirmed</span></div>
+          <div class="ag"><div class="t">14:00–15:00</div><div class="body"><div class="ttl">Focus block</div><div class="sub">Google Calendar</div></div><span class="tag cal">cal</span></div>
+          <div class="ag free"><div class="t">15:00–16:00</div><div class="body"><div class="ttl">Free — 1 h open</div></div></div>
+          <div class="ag"><div class="t">16:00–17:00</div><div class="body"><div class="ttl">Q3 roadmap</div><div class="sub">needs your Accept</div></div><span class="tag pending">pending</span></div>
+        </div>
+
+        <div class="card">
+          <h3>My tasks</h3>
+          <div class="task"><input type="checkbox"><span class="txt">Write usability test script</span><span class="est">1 h</span><span class="slot">▸ 10:30</span></div>
+          <div class="task"><input type="checkbox"><span class="txt">Fill OKR row in Q3 sheet</span><span class="est">30 m</span><span class="slot">▸ 11:30</span></div>
+          <div class="task"><input type="checkbox"><span class="txt">Prepare Q3 budget numbers</span><span class="est">1 h</span><span class="slot">▸ 15:00</span></div>
+          <p class="note">Suggested slots come from today's free gaps on your calendar.</p>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <div class="card">
+          <h3>Inbox — everything that needs you <span class="count">9</span></h3>
+          <div class="tabs">
+            <button class="tab on">All 9</button>
+            <button class="tab">🟠 Needs reply 3</button>
+            <button class="tab">🔴 To finish 4</button>
+            <button class="tab">🔵 FYI 2</button>
+            <button class="tab">✅ Done 0</button>
+          </div>
+
+          <div class="ibx"><span class="src slack">slack</span><div class="body">
+            <div class="from">Lisa Park (DM)</div>
+            <div class="txt">Can you review the Q3 budget doc before Thursday? I need your numbers for the exec deck.</div>
+            <div class="meta"><span class="chip reply">Needs reply</span><span class="due">due Thu</span><span class="ago">2 h ago</span>
+              <span class="act"><button class="btn done">✓ Replied</button><button class="btn">z͎</button></span></div>
+          </div></div>
+
+          <div class="ibx"><span class="src timesync">timesync</span><div class="body">
+            <div class="from">Sarah Chen</div>
+            <div class="txt">Q3 roadmap (16:00–17:00 today) is waiting for your Accept.</div>
+            <div class="meta"><span class="chip reply">Needs reply</span><span class="due">due today</span><span class="ago">3 h ago</span>
+              <span class="act"><button class="btn done">✓ Accept</button><button class="btn">z͎</button></span></div>
+          </div></div>
+
+          <div class="ibx"><span class="src zendesk">zendesk</span><div class="body">
+            <div class="from">Ticket #4521 · Acme Corp</div>
+            <div class="txt">Customer calendar sync fails after password change — assigned to you.</div>
+            <div class="meta"><span class="chip finish">To finish</span><span class="due">due today</span><span class="ago">1 h ago</span>
+              <span class="act"><button class="btn done">✓ Done</button><button class="btn">z͎</button></span></div>
+          </div></div>
+
+          <div class="ibx"><span class="src sheets">sheets</span><div class="body">
+            <div class="from">Q3 planning sheet</div>
+            <div class="txt">Your OKR row is still empty — team deadline is tomorrow.</div>
+            <div class="meta"><span class="chip finish">To finish</span><span class="due">due tomorrow</span><span class="ago">1 d ago</span>
+              <span class="act"><button class="btn done">✓ Done</button><button class="btn">z͎</button></span></div>
+          </div></div>
+
+          <div class="ibx"><span class="src gmail">gmail</span><div class="body">
+            <div class="from">HR · People Ops</div>
+            <div class="txt">Annual self-review form — submit by June 20.</div>
+            <div class="meta"><span class="chip finish">To finish</span><span class="due">due Jun 20</span><span class="ago">4 h ago</span>
+              <span class="act"><button class="btn done">✓ Done</button><button class="btn">z͎</button></span></div>
+          </div></div>
+
+          <div class="ibx"><span class="src slack">slack</span><div class="body">
+            <div class="from">#design · Mei Lin</div>
+            <div class="txt">@alex the new onboarding mockups are ready for your look.</div>
+            <div class="meta"><span class="chip reply">Needs reply</span><span class="ago">5 h ago</span>
+              <span class="act"><button class="btn done">✓ Replied</button><button class="btn">z͎</button></span></div>
+          </div></div>
+
+          <div class="ibx"><span class="src gmail">gmail</span><div class="body">
+            <div class="from">Comms</div>
+            <div class="txt">Office closed Monday for public holiday. No action needed.</div>
+            <div class="meta"><span class="chip fyi">FYI</span><span class="ago">6 h ago</span>
+              <span class="act"><button class="btn">✓ Got it</button></span></div>
+          </div></div>
+        </div>
+
+        <!-- WEEK HEATMAP -->
+        <div class="card">
+          <div class="secthead"><h2>Week view — when is the team free?</h2></div>
+          <p class="note" style="margin:-8px 0 14px">Darker = more teammates free at that hour. Click a cell to jump to that day.</p>
+          <div class="heat" id="heat"></div>
+          <div class="legend"><span>Fewer free</span>
+            <span class="sw" style="background:#EAF0FB"></span><span class="sw" style="background:#BFD3F6"></span>
+            <span class="sw" style="background:#7FA8EE"></span><span class="sw" style="background:#3F74DE"></span>
+            <span class="sw" style="background:#1D4ED8"></span><span>More free</span></div>
+          <div class="best">
+            <div style="font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:6px">BEST SLOTS THIS WEEK</div>
+            <div class="b"><span class="rank">1</span><span class="when">Wed 14:00–15:00</span><span class="who">all 5 free</span></div>
+            <div class="b"><span class="rank">2</span><span class="when">Tue 13:00–14:00</span><span class="who">4 of 5 free</span></div>
+            <div class="b"><span class="rank">3</span><span class="when">Thu 09:00–10:00</span><span class="who">4 of 5 free</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // build the heatmap grid with mock "people free" counts
+  const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], hrs=[8,9,10,11,12,13,14,15,16,17,18];
+  const colors=["#EAF0FB","#BFD3F6","#7FA8EE","#3F74DE","#1D4ED8"];
+  const heat=document.getElementById("heat");
+  heat.appendChild(Object.assign(document.createElement("div"),{className:"h",textContent:""}));
+  days.forEach(d=>heat.appendChild(Object.assign(document.createElement("div"),{className:"h",textContent:d})));
+  hrs.forEach(h=>{
+    heat.appendChild(Object.assign(document.createElement("div"),{className:"hr",textContent:h+":00"}));
+    days.forEach((d,di)=>{
+      // deterministic pseudo-random free-count 0..5, weekends/early/late lower
+      let base=5-Math.abs(h-13)*0.5; if(di>4)base-=3; if(h<9||h>17)base-=1.5;
+      const free=Math.max(0,Math.min(5,Math.round(base+((h*7+di)%3)-1)));
+      const c=document.createElement("div"); c.className="cell";
+      c.style.background=colors[Math.max(0,free-1)]||"#F1F5F9";
+      c.title=`${d} ${h}:00 — ${free} of 5 free`;
+      heat.appendChild(c);
+    });
+  });
+  // tab toggle (visual only)
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on")); t.classList.add("on");});
+</script>
+</body>
+</html>

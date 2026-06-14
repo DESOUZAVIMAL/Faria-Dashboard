@@ -5,9 +5,12 @@
 > **To resume in Claude.ai:** paste the full contents of this file as your first message.
 
 **Author:** Vimal De Souza  
-**Stack:** Node.js + Express, Google OAuth2, Vanilla JS (no build tools)  
+**Backend:** Node.js + Express, Google OAuth2 (single file `server.js`)  
+**Frontend (NEW):** React + Vite + TypeScript + Tailwind v4 + shadcn/ui in `web/` — the modern "high-end" UI  
+**Legacy frontend:** Vanilla HTML/JS in `public/` — still works, being superseded by `web/`  
 **Repo:** https://github.com/DESOUZAVIMAL/Faria-Dashboard (private)  
-**Local dev:** `cd "timesync 2" && node server.js` → http://localhost:3000
+**Run backend:** `cd "timesync 2" && node server.js` → http://localhost:3000  
+**Run modern frontend:** `cd "timesync 2/web" && npm run dev` → http://localhost:5173 (proxies /api & /auth to :3000)
 
 ---
 
@@ -41,21 +44,32 @@ See when everyone on your distributed team is available across timezones. Find o
 
 ### Tech Stack
 ```
-Backend:   Node.js + Express (single file: server.js)
+Backend:   Node.js + Express (single file: server.js) — a pure JSON API
 Auth:      Google OAuth2 → JWT in httpOnly cookie (30-day)
 Calendar:  googleapis SDK (calendar.readonly + calendar.events scopes)
 Database:  db.json flat file (SQLite migration planned before connectors)
 AI:        Optional — Gemini API or Anthropic SDK, degrades to rule-based
-Frontend:  Vanilla HTML/CSS/JS — no React, no Vue, no build step (intentional)
-Fonts:     Space Grotesk (headings) + Inter (body) from Google Fonts
+
+Frontend (modern, in web/):
+  React 19 + Vite + TypeScript
+  Tailwind v4 + shadcn/ui  (the high-end look)
+  Motion (animations, import from "motion/react")
+  lucide-react (icons)
+  Recharts (charts — not yet used; heatmap is plain CSS grid)
+  TanStack Query (data fetching — wired, ready for live /api calls)
+  React Router (Today / Schedule / Week pages)
+  Luxon (timezone math for the Gantt)
+  Font: Geist Variable (installed by shadcn init)
+
+Legacy frontend (in public/): Vanilla HTML/CSS/JS, no build step
 ```
 
 ### File Structure
 ```
 timesync 2/
-├── server.js          ← All backend: Express routes, OAuth, GCal, db, AI
+├── server.js          ← All backend: Express routes, OAuth, GCal, db, AI (pure API)
 ├── rules.js           ← Deterministic triage engine (zero AI required)
-├── package.json
+├── package.json       ← backend deps
 ├── .env               ← NEVER commit (real secrets here)
 ├── .env.example       ← Template — safe to commit
 ├── db.json            ← NEVER commit (real user data + refresh tokens)
@@ -63,13 +77,42 @@ timesync 2/
 ├── Dockerfile
 ├── README.md
 ├── PROJECT_BRIEF.md   ← This file — full context for AI or new contributors
-└── public/
-    ├── index.html     ← Login / landing page
-    ├── style.css      ← Design tokens + shared component styles
-    ├── app.js         ← Timezone Gantt (real authenticated app)
-    ├── today.html     ← Today dashboard (real authenticated app, calls API)
-    ├── demo.html      ← Interactive Gantt demo (no auth, mock 5-person team)
-    └── dashboard.html ← Today dashboard demo (no auth, hardcoded mock data)
+│
+├── public/            ← LEGACY vanilla frontend (still works, being superseded)
+│   ├── index.html     ← Login / landing page
+│   ├── style.css      ← Design tokens + shared component styles
+│   ├── app.js         ← Timezone Gantt (real authenticated app)
+│   ├── today.html     ← Today dashboard (real authenticated app, calls API)
+│   ├── demo.html      ← Interactive Gantt demo (no auth, mock 5-person team)
+│   ├── dashboard.html ← Today dashboard demo (no auth, hardcoded mock data)
+│   ├── prototype-enhanced.html ← "enhanced vanilla" UI prototype (light, clean)
+│   └── prototype-modern.html   ← "modern futuristic" UI prototype (dark, glassy)
+│
+└── web/               ← MODERN React frontend (the chosen direction)
+    ├── vite.config.ts ← Tailwind plugin, @ alias, proxy /api & /auth → :3000
+    ├── index.html     ← has class="dark" (app is dark-mode only)
+    ├── src/
+    │   ├── main.tsx       ← BrowserRouter + QueryClientProvider
+    │   ├── App.tsx        ← Routes: /today /schedule /week
+    │   ├── index.css      ← Tailwind v4 + futuristic theme tokens + .ts-* utilities
+    │   ├── lib/
+    │   │   ├── data.ts     ← mock inbox/agenda/tasks/heatmap data + types
+    │   │   ├── schedule.ts ← Gantt team data + Luxon timezone helpers
+    │   │   └── utils.ts    ← shadcn cn() helper
+    │   ├── components/
+    │   │   ├── TopBar.tsx      ← header + nav tabs + world clocks + avatar
+    │   │   ├── Brief.tsx       ← AI brief hero with animated counters
+    │   │   ├── Panel.tsx       ← reusable glass card with rise animation
+    │   │   ├── Agenda.tsx      ← today's timeline with free-gap rows
+    │   │   ├── Tasks.tsx       ← tasks + free-slot chips
+    │   │   ├── Inbox.tsx       ← filterable triage inbox (animated)
+    │   │   ├── WeekHeatmap.tsx ← week free-slot heatmap + best slots
+    │   │   └── ui/             ← shadcn components (button, card, tabs, etc.)
+    │   └── pages/
+    │       ├── TodayPage.tsx    ← Brief + Agenda + Tasks + Inbox
+    │       ├── SchedulePage.tsx ← timezone Gantt board (the original idea)
+    │       └── WeekPage.tsx     ← full-page heatmap
+    └── (node_modules, dist — gitignored)
 ```
 
 ### Environment Variables
@@ -243,16 +286,80 @@ Snoozed items return at **06:00 next morning** — not "24 hours later". Ensures
 
 ---
 
+## 4.7 Modern React Frontend (`web/`) — the chosen UI direction
+
+After building two prototypes (`public/prototype-enhanced.html` = light/clean, and
+`public/prototype-modern.html` = dark/futuristic), the **modern dark futuristic** look was chosen.
+It was then rebuilt as a real React app in `web/`.
+
+### Why a rebuild (and not just enhance the vanilla pages)
+The user wants a "very advanced, high-end, catchy, futuristic" UI with rich visualization. That ceiling
+is reached with the React + Tailwind + shadcn/ui component stack (the look of Linear / Vercel / Notion).
+The backend (`server.js`) is a pure JSON API and **does not change** — only the front-end is rebuilt.
+
+### The three pages (React Router)
+| Route | Page | Purpose |
+|---|---|---|
+| `/today` | `TodayPage` | The dashboard: AI brief + agenda + tasks + triage inbox — "what needs me" |
+| `/schedule` | `SchedulePage` | The timezone Gantt board (the project's ORIGINAL idea) — "when is the team online" |
+| `/week` | `WeekPage` | Free-slot heatmap — "best times this week" |
+
+### Design system / theme
+- **Dark-mode only** (`class="dark"` on `<html>`). Palette in `web/src/index.css`:
+  bg `#070A14`, accents blue `#6D8BFF` / purple `#A78BFA` / cyan `#5EEAD4`, status
+  reply `#FBBF24` / finish `#FB7185` / fyi `#60A5FA` / free `#34D399`.
+- Status colors registered in Tailwind `@theme` → usable as `text-reply`, `bg-free`, etc.
+- Custom utilities in `index.css`: `.ts-aurora` (animated background), `.ts-glass`
+  (glassmorphic panel), `.ts-rise` (entrance), `.ts-pulse`, `.ts-glow-primary/.ts-glow-free`.
+- Animations via **Motion** (`motion/react`): counters, list add/remove, page entrances.
+
+### Timezone Gantt logic (`web/src/lib/schedule.ts`)
+- Uses **Luxon** to convert each person's local working hours / busy blocks into the viewer
+  timezone (Asia/Taipei), positioned on a 0–24h axis as percentages.
+- **Strict one-band rule** preserved: a working band only renders if its START falls on the
+  viewed day in viewer time — prevents the US-timezone "phantom band" bug.
+- `commonFreeSlots()` computes where ALL selected people are free → the green strip.
+- Day navigation lets you look at tomorrow / next week to find a slot when today has none.
+
+### Data layer
+- All data is currently **mock** in `web/src/lib/data.ts` and `schedule.ts`, shaped exactly
+  like the real API responses. Going live = replace mock imports with **TanStack Query**
+  fetches against `/api/*` — components don't change.
+- `QueryClient` already set up in `main.tsx`. Vite proxies `/api` and `/auth` to `:3000`.
+
+### How to run
+```bash
+# Terminal 1 — backend API
+cd "timesync 2" && node server.js          # :3000
+
+# Terminal 2 — modern frontend
+cd "timesync 2/web" && npm run dev          # :5173  (proxies to :3000)
+```
+Build for production: `cd web && npm run build` → static files in `web/dist/`
+(serve them from Express in production).
+
+---
+
 ## 5. Feature Backlog
 
+### ✅ Recently Completed (this session)
+- [x] **Modern React frontend** scaffolded in `web/` (React + Vite + TS + Tailwind v4 + shadcn/ui)
+- [x] **Today dashboard page** — AI brief, agenda, tasks, triage inbox (animated)
+- [x] **Schedule (timezone Gantt) page** — Luxon-based, strict one-band rule, day nav, free-slot strip
+- [x] **Week view heatmap** — grid + "best slots this week" list *(was the "i dont see month week" request)*
+- [x] Two UI prototypes built (`prototype-enhanced.html`, `prototype-modern.html`); modern chosen
+
 ### 🔴 High Priority — Build Next
-- [ ] **Week view heatmap** — 7-column grid (days) × 24 rows (hours), cell color = # people free. "Best slots this week" ranked list below grid. Click cell → jump to that day's Gantt. *(User requested: "i dont see month week that we discussed")*
+- [ ] **Wire real data into `web/`** — replace mock `data.ts`/`schedule.ts` with TanStack Query calls to `/api/items`, `/api/agenda`, `/api/tasks`, `/api/brief`, `/api/team`. Add Google login flow to the React app.
 - [ ] **Gmail connector** — Gmail API **polling every 5 min** (personal): `to:me`, skip no-reply/promotions, push to `/api/ingest`. Company scale → Pub/Sub push. See §6.5.
 - [ ] **Slack connector** — Slack Events API via **Socket Mode** (personal, real-time, no public URL): DMs + @mentions + whitelisted channels, push to `/api/ingest`. Company scale → Events API over HTTP. See §6.5.
 - [ ] **Zendesk connector** — Poll `/tickets?assignee_id=me&status=open`, push to `/api/ingest`
 
 ### 🟠 Medium Priority
-- [ ] **Month view** — calendar grid with per-day "best slot score" dots (lower priority than week)
+- [ ] **Month view** — calendar grid with per-day "best slot score" dots (lower priority than week). Add as a 4th route in `web/`.
+- [ ] **Click heatmap cell → jump to that day's Schedule Gantt** (cross-page navigation)
+- [ ] **Recharts visualizations** — meeting-load per person, items-resolved-this-week trend (lib installed, unused so far)
+- [ ] **Serve `web/dist` from Express** in production (single deploy)
 - [ ] **Browser push notifications** — meeting reminders 5 min before start, new urgent inbox items
 - [ ] **SQLite migration** — replace `db.json` before Slack/Gmail phases (needed for search, filtering, scale)
 - [ ] **Gemini Pro / MCP integration** — org Gemini Pro for brief summarization; if org has MCP endpoint, connect via MCP server
@@ -384,6 +491,13 @@ The migration path is clean: **`/api/ingest` and `rules.js` never change** — o
 | Jun 2026 | Personal connectors: Gmail polling + Slack Socket Mode | Both work on localhost with NO public URL; real-time Slack today, near-real-time Gmail. See §6.5 |
 | Jun 2026 | MCP is NOT used for data connectors | MCP is for AI assistants to use tools, not for pulling app data; wrong tool for this job |
 | Jun 2026 | Company scale: Gmail Pub/Sub push + Slack HTTP Events API | Polling wastes quota across many accounts; push scales. Migration only touches connector layer |
+| Jun 2026 | Removed Zoom integration entirely | Out of scope for the work-dashboard direction; dropped `/webhooks/zoom`, env var, and all docs |
+| Jun 2026 | **Reversed "no framework" decision → React for the modern UI** | User wants high-end/futuristic UI + rich viz. shadcn/ui ceiling needs React. Backend stays a pure API, so only the front-end is affected |
+| Jun 2026 | Modern stack: React+Vite+TS+Tailwind v4+shadcn/ui+Motion+Recharts+TanStack Query+React Router+Luxon | Researched current (2026) best practice; picked Recharts over visx/D3 (easier, smaller); chose dark futuristic theme over light |
+| Jun 2026 | Modern UI is **dark-mode only** | Matches the "futuristic command-center" look chosen from the two prototypes |
+| Jun 2026 | New React app lives in `web/`; legacy `public/` kept | Non-destructive — old app keeps working until the React rebuild reaches parity |
+| Jun 2026 | Charts: Recharts only (visx/D3 deferred) | Recharts easier + smaller bundle; heatmap built with plain CSS grid (no lib needed) |
+| Jun 2026 | Claude Code (not Claude.ai) is the working home | Context + memory live here; `PROJECT_BRIEF.md` is the portable handoff if Claude.ai is ever needed |
 
 ---
 
@@ -404,13 +518,15 @@ The migration path is clean: **`/api/ingest` and `rules.js` never change** — o
 ### In Claude Code (VS Code extension or CLI)
 ```bash
 cd "timesync 2"
-# Read this file first, then:
-cat server.js          # backend
-cat rules.js           # triage engine
-# open public/today.html for the dashboard UI
-node server.js         # start server
-node rules.js --test   # verify triage engine
+# 1. Read this file first (PROJECT_BRIEF.md) — it is the full context.
+# 2. Backend (pure JSON API):
+node server.js             # :3000
+node rules.js --test       # verify triage engine (14 tests)
+# 3. Modern React frontend (the current UI work):
+cd web && npm install && npm run dev   # :5173 (proxies /api & /auth to :3000)
 ```
+Key files to look at: `server.js` (API), `rules.js` (triage), `web/src/App.tsx` (routes),
+`web/src/pages/*` (Today/Schedule/Week), `web/src/lib/{data,schedule}.ts` (mock data + tz helpers).
 Context is also stored in memory files at: `~/.claude/projects/-Users-vimal-Downloads-timesync-2/memory/`
 
 ### In Claude.ai (fresh chat)
@@ -418,12 +534,19 @@ Paste the full contents of this file as the first message — gives complete con
 
 ### Useful commands
 ```bash
-node server.js             # start app
+# Backend
+node server.js             # start API on :3000
 node rules.js --test       # test triage engine (all 14 should pass)
-lsof -ti:3000              # check what's using port 3000
-lsof -ti:3000 | xargs kill # kill stale server
-git status                 # check what's changed
-git push origin main       # push to GitHub
+lsof -ti:3000 | xargs kill # kill stale backend
+
+# Modern frontend (in web/)
+cd web && npm run dev      # dev server on :5173
+npm run build              # production build → web/dist/
+lsof -ti:5173 | xargs kill # kill stale Vite
+
+# Git
+git status
+git push origin main       # push to GitHub (SSH, account DESOUZAVIMAL)
 ```
 
 ---
