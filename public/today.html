@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TimeSync — Today</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .dash-grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .brief { background: linear-gradient(135deg, #0F1629 0%, #1E2340 60%, #14532D 130%); color: #E7ECF6;
+      border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .brief h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; margin: 0 0 6px; color: #fff; }
+    .brief .ai-tag { font-size: 10px; font-weight: 700; letter-spacing: .8px; color: #0F1629;
+      background: #7DE3C8; border-radius: 99px; padding: 2px 8px; margin-left: 8px; vertical-align: 2px; }
+    .brief p { font-size: 13.5px; line-height: 1.65; margin: 6px 0 0; color: #C6CEE2; }
+    .clockrow { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.12); font-size: 11.5px; color: #9AA4C0; }
+    .clockrow b { color: #E7ECF6; font-weight: 600; }
+
+    .ag-item { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; align-items: baseline; }
+    .ag-item:first-of-type { border-top: none; }
+    .ag-time { font-weight: 700; font-size: 12px; min-width: 92px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .ag-title { flex: 1; font-weight: 600; }
+    .ag-item.gap .ag-title { font-weight: 500; color: var(--free); }
+    .tag { font-size: 10px; font-weight: 700; border-radius: 99px; padding: 2px 8px; white-space: nowrap; }
+    .tag.confirmed { background: #D1FAE5; color: #065F46; }
+    .tag.pending { background: #FEF3C7; color: #92400E; }
+    .tag.gcal { background: var(--paper); color: var(--mut); border: 1px solid var(--line); }
+
+    .task { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; flex-wrap: wrap; }
+    .task:first-of-type { border-top: none; }
+    .task input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--free); }
+    .task .t-est { font-size: 11px; color: var(--mut); }
+    .task.done .t-text { text-decoration: line-through; color: var(--mut); }
+    .slot-suggest { font-family: inherit; font-size: 10.5px; font-weight: 600; color: var(--free); background: var(--free-soft);
+      border: 1px solid var(--free-border); border-radius: 99px; padding: 2px 8px; cursor: pointer; white-space: nowrap; }
+    .slot-suggest:hover { background: var(--free); color: #fff; }
+    .slot-suggest.placed { background: var(--free); color: #fff; cursor: default; }
+    .gaprow { width: 100%; display: flex; gap: 5px; flex-wrap: wrap; padding: 4px 0 2px 24px; }
+    .addrow { display: flex; gap: 6px; margin-top: 10px; }
+    .addrow input { flex: 1; min-width: 0; }
+    .addrow select { width: auto; }
+
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab { font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 99px;
+      border: 1px solid var(--line); background: var(--card); color: var(--mut); cursor: pointer; }
+    .tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .ibx { display: flex; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 13px; align-items: flex-start; }
+    .ibx:first-of-type { border-top: none; }
+    .ibx.done .ibx-text { text-decoration: line-through; color: var(--mut); }
+    .src { font-size: 10px; font-weight: 700; color: #fff; border-radius: 6px; padding: 3px 7px; min-width: 58px;
+      text-align: center; flex-shrink: 0; margin-top: 1px; }
+    .src.slack { background: #4A154B; } .src.gmail { background: #C5221F; } .src.zendesk { background: #03363D; }
+    .src.sheets { background: #188038; } .src.timesync { background: var(--free); } .src.manual { background: #475569; }
+    .ibx-main { flex: 1; min-width: 0; }
+    .ibx-from { font-weight: 700; font-size: 12.5px; }
+    .ibx-text { color: var(--ink-2); margin-top: 1px; }
+    .ibx-meta { display: flex; gap: 8px; align-items: center; margin-top: 5px; flex-wrap: wrap; }
+    .cat { font-size: 10px; font-weight: 700; border-radius: 99px; padding: 2px 8px; cursor: help; }
+    .cat.fyi { background: #E0E7FF; color: #3730A3; }
+    .cat.reply { background: #FEF3C7; color: #92400E; }
+    .cat.finish { background: #FEE2E2; color: #991B1B; }
+    .due { font-size: 10.5px; font-weight: 600; color: var(--busy); }
+    .ibx-actions { display: flex; gap: 5px; flex-shrink: 0; }
+    .mini { font-family: inherit; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 7px;
+      border: 1px solid var(--line); background: var(--card); cursor: pointer; white-space: nowrap; }
+    .mini:hover { background: var(--paper); }
+    .mini.go { background: var(--free); border-color: var(--free); color: #fff; }
+    .count-dot { display: inline-block; min-width: 17px; text-align: center; background: var(--busy); color: #fff;
+      font-size: 10px; font-weight: 700; border-radius: 99px; padding: 1px 5px; margin-left: 5px; }
+    .empty { font-size: 13px; color: var(--mut); padding: 12px 0; }
+  </style>
+</head>
+<body>
+  <div id="app"><div class="loading">Loading your day…</div></div>
+
+  <script>
+  (() => {
+    const $ = (sel, el = document) => el.querySelector(sel);
+    const app = $("#app");
+    const VIEWER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    let me = null, team = [], agenda = { events: [], gaps: [] }, items = [], tasks = [], brief = "";
+    let tab = "all", schedOpen = null;
+
+    const CATS = { reply: "🟠 Needs reply", finish: "🔴 To finish", fyi: "🔵 FYI" };
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const api = (url, opts) => fetch(url, opts).then((r) => { if (!r.ok) throw r; return r.json(); });
+
+    function todayStr() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    const dayWindow = () => {
+      const [y, m, d] = todayStr().split("-").map(Number);
+      const s = new Date(y, m - 1, d).getTime();
+      return { date: todayStr(), start: new Date(s).toISOString(), end: new Date(s + 24 * 3.6e6).toISOString() };
+    };
+    const fmtHM = (iso) => new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+    const clock = (tz) => { try { return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()); } catch { return "--:--"; } };
+    const minutes = (g) => Math.round((Date.parse(g.end) - Date.parse(g.start)) / 60000);
+
+    async function loadAll() {
+      const w = dayWindow();
+      const q = `date=${w.date}&start=${encodeURIComponent(w.start)}&end=${encodeURIComponent(w.end)}`;
+      const [ag, it, tk, br, tm] = await Promise.all([
+        api(`/api/agenda?${q}`), api("/api/items"), api("/api/tasks"), api(`/api/brief?${q}`), api("/api/team"),
+      ]);
+      agenda = ag; items = it; tasks = tk; brief = br.brief; team = tm;
+      render();
+    }
+
+    function agendaRows() {
+      const rows = [
+        ...agenda.events.map((e) => ({ ...e, sort: e.allDay ? -1 : Date.parse(e.start) })),
+        ...agenda.gaps.filter((g) => minutes(g) >= 30).map((g) => ({
+          gap: true, start: g.start, end: g.end, sort: Date.parse(g.start),
+          title: `Free — ${minutes(g) >= 60 ? (minutes(g) / 60).toFixed(1).replace(".0", "") + " h" : minutes(g) + " m"} open`,
+        })),
+      ];
+      return rows.sort((a, b) => a.sort - b.sort);
+    }
+
+    function render() {
+      const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const open = items.filter((x) => x.status === "open");
+      const shown = tab === "all" ? open : tab === "done" ? items.filter((x) => x.status === "done") : open.filter((x) => x.cat === tab);
+      const cnt = (c) => open.filter((x) => x.cat === c).length;
+
+      app.innerHTML = `
+      <div class="app"><div class="wrap">
+        <div class="topbar">
+          <div class="brand">
+            <h1>Today</h1>
+            <p>${esc(today)} · everything that needs you, in one place · times in ${esc(VIEWER_TZ)}</p>
+          </div>
+          <div class="userchip">
+            ${me.picture ? `<img src="${esc(me.picture)}" alt="">` : ""}
+            <span class="uname">${esc(me.name)}</span>
+            <a class="btn ghost sm" href="/" style="text-decoration:none">Scheduling board →</a>
+          </div>
+        </div>
+
+        <div class="brief">
+          <h2>Morning brief<span class="ai-tag">${brief.length > 260 ? "AI" : "RULES"}</span></h2>
+          <p>${esc(brief)}</p>
+          <div class="clockrow">
+            ${team.map((u) => `<span>${esc(u.name.split(" ")[0])} <b>${clock(u.tz)}</b></span>`).join("")}
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div>
+            <div class="card">
+              <div class="card-title">Agenda</div>
+              ${agendaRows().length === 0 ? `<div class="empty">Nothing on the calendar today.</div>` : ""}
+              ${agendaRows().map((e) => `
+                <div class="ag-item${e.gap ? " gap" : ""}">
+                  <div class="ag-time">${e.allDay ? "all day" : `${fmtHM(e.start)}–${fmtHM(e.end)}`}</div>
+                  <div class="ag-title">${esc(e.title)}</div>
+                  ${!e.gap && e.kind ? `<span class="tag ${e.kind}">${e.kind === "gcal" ? "calendar" : e.kind}</span>` : ""}
+                </div>`).join("")}
+            </div>
+
+            <div class="card">
+              <div class="card-title">My tasks</div>
+              ${tasks.filter((t) => !t.deleted).length === 0 ? `<div class="empty">No tasks yet — add one below.</div>` : ""}
+              ${tasks.filter((t) => !t.deleted).map((t) => `
+                <div class="task${t.done ? " done" : ""}">
+                  <input type="checkbox" data-tdone="${t.id}" ${t.done ? "checked" : ""}>
+                  <span class="t-text" style="flex:1">${esc(t.text)}</span>
+                  <span class="t-est">${t.est} m</span>
+                  ${t.done ? "" : t.scheduled
+                    ? `<span class="slot-suggest placed">✓ ${fmtHM(t.scheduled.start)}–${fmtHM(t.scheduled.end)}</span>`
+                    : `<button class="slot-suggest" data-sched="${t.id}">▸ schedule</button>`}
+                  ${schedOpen === t.id ? `<div class="gaprow">
+                      ${agenda.gaps.filter((g) => minutes(g) >= t.est).slice(0, 4).map((g) =>
+                        `<button class="slot-suggest" data-place="${t.id}" data-start="${g.start}">${fmtHM(g.start)} (${minutes(g)} m free)</button>`).join("")
+                        || `<span class="t-est">no free gap fits ${t.est} m today</span>`}
+                    </div>` : ""}
+                </div>`).join("")}
+              <div class="addrow">
+                <input id="newTask" placeholder="Add a task…" maxlength="200">
+                <select id="newTaskEst"><option value="15">15 m</option><option value="30" selected>30 m</option><option value="60">1 h</option><option value="90">1.5 h</option></select>
+                <button class="btn sm" id="addTask">Add</button>
+              </div>
+              <div style="font-size:11px;color:var(--mut);margin-top:8px">▸ schedule places the task into a real free gap on your Google Calendar.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Inbox — everything that needs you</div>
+            <div class="tabs">
+              <button class="tab${tab === "all" ? " on" : ""}" data-tab="all">All<span class="count-dot">${open.length}</span></button>
+              <button class="tab${tab === "reply" ? " on" : ""}" data-tab="reply">🟠 Reply (${cnt("reply")})</button>
+              <button class="tab${tab === "finish" ? " on" : ""}" data-tab="finish">🔴 Finish (${cnt("finish")})</button>
+              <button class="tab${tab === "fyi" ? " on" : ""}" data-tab="fyi">🔵 FYI (${cnt("fyi")})</button>
+              <button class="tab${tab === "done" ? " on" : ""}" data-tab="done">✅ Done (${items.filter((x) => x.status === "done").length})</button>
+            </div>
+            ${shown.length === 0 ? `<div class="empty">Nothing here. 🎉</div>` : ""}
+            ${shown.map((x) => `
+              <div class="ibx${x.status === "done" ? " done" : ""}">
+                <span class="src ${esc(x.src)}">${esc(x.src)}</span>
+                <div class="ibx-main">
+                  <div class="ibx-from">${esc(x.from || "—")}</div>
+                  <div class="ibx-text">${esc(x.text)}</div>
+                  <div class="ibx-meta">
+                    <span class="cat ${x.cat}" title="why: ${esc((x.reasons || []).join(", "))}">${CATS[x.cat]}</span>
+                    ${x.due ? `<span class="due">due ${esc(x.due)}</span>` : ""}
+                  </div>
+                </div>
+                <div class="ibx-actions">
+                  ${x.status !== "done" ? `
+                    <button class="mini go" data-done="${esc(x.id)}">${x.cat === "reply" ? "✓ Replied" : x.cat === "fyi" ? "✓ Got it" : "✓ Done"}</button>
+                    <button class="mini" data-snooze="${esc(x.id)}" title="Hide until tomorrow 06:00 — it returns in your brief">💤</button>` : `
+                    <button class="mini" data-reopen="${esc(x.id)}">↩ Reopen</button>`}
+                </div>
+              </div>`).join("")}
+            <div class="addrow">
+              <input id="newItemFrom" placeholder="From (optional)" style="max-width:140px">
+              <input id="newItem" placeholder="Track something… e.g. 'Reply to vendor quote by Friday'" maxlength="500">
+              <button class="btn sm" id="addItem">Track</button>
+            </div>
+            <div style="font-size:11px;color:var(--mut);margin-top:8px">
+              New items are classified automatically by the rules engine — hover a category chip to see why.
+              Connectors (Slack ⭐, Gmail, Zendesk) will feed this list automatically once configured.
+            </div>
+          </div>
+        </div>
+      </div></div>`;
+
+      bind();
+    }
+
+    function bind() {
+      document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.tab; render(); }));
+      document.querySelectorAll("[data-done]").forEach((b) => b.addEventListener("click", () => setStatus(b.dataset.done, "done")));
+      document.querySelectorAll("[data-snooze]").forEach((b) => b.addEventListener("click", () => setStatus(b.dataset.snooze, "snooze")));
+      document.querySelectorAll("[data-reopen]").forEach((b) => b.addEventListener("click", () => setStatus(b.dataset.reopen, "reopen")));
+
+      document.querySelectorAll("[data-tdone]").forEach((cb) => cb.addEventListener("change", async () => {
+        await api(`/api/tasks/${cb.dataset.tdone}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ done: cb.checked }) });
+        loadAll();
+      }));
+      document.querySelectorAll("[data-sched]").forEach((b) => b.addEventListener("click", () => { schedOpen = schedOpen === b.dataset.sched ? null : b.dataset.sched; render(); }));
+      document.querySelectorAll("[data-place]").forEach((b) => b.addEventListener("click", async () => {
+        const t = tasks.find((x) => x.id === b.dataset.place);
+        const start = b.dataset.start;
+        const end = new Date(Date.parse(start) + t.est * 60000).toISOString();
+        await api(`/api/tasks/${t.id}/schedule`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start, end }) });
+        schedOpen = null;
+        loadAll();
+      }));
+
+      $("#addTask")?.addEventListener("click", addTask);
+      $("#newTask")?.addEventListener("keydown", (e) => e.key === "Enter" && addTask());
+      $("#addItem")?.addEventListener("click", addItem);
+      $("#newItem")?.addEventListener("keydown", (e) => e.key === "Enter" && addItem());
+    }
+
+    async function setStatus(id, action) {
+      await api(`/api/items/${encodeURIComponent(id)}/status`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }),
+      });
+      loadAll();
+    }
+    async function addTask() {
+      const text = $("#newTask").value.trim();
+      if (!text) return;
+      await api("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, est: +$("#newTaskEst").value }) });
+      loadAll();
+    }
+    async function addItem() {
+      const text = $("#newItem").value.trim();
+      if (!text) return;
+      await api("/api/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, from: $("#newItemFrom").value.trim() }) });
+      loadAll();
+    }
+
+    /* ── boot ── */
+    (async () => {
+      try {
+        me = await api("/api/me");
+        await loadAll();
+        setInterval(loadAll, 60000);
+      } catch {
+        location.href = "/"; // not signed in → sign-in page
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>

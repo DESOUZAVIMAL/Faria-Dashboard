@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TimeSync — Today (dashboard demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* ── dashboard-only styles (tokens come from style.css) ── */
+    .demo-badge { font-size: 11px; font-weight: 700; letter-spacing: .5px; color: #fff;
+      background: var(--accent); border-radius: 99px; padding: 3px 10px; margin-left: 10px; vertical-align: 3px; }
+    .dash-grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    /* brief */
+    .brief { background: linear-gradient(135deg, #0F1629 0%, #1E2340 60%, #14532D 130%); color: #E7ECF6;
+      border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .brief h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; margin: 0 0 6px; color: #fff; }
+    .brief .ai-tag { font-size: 10px; font-weight: 700; letter-spacing: .8px; color: #0F1629;
+      background: #7DE3C8; border-radius: 99px; padding: 2px 8px; margin-left: 8px; vertical-align: 2px; }
+    .brief p { font-size: 13.5px; line-height: 1.65; margin: 6px 0 0; color: #C6CEE2; }
+    .brief b { color: #fff; }
+    .clockrow { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.12); font-size: 11.5px; color: #9AA4C0; }
+    .clockrow b { color: #E7ECF6; font-weight: 600; }
+
+    /* agenda */
+    .ag-item { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; align-items: baseline; }
+    .ag-item:first-of-type { border-top: none; }
+    .ag-time { font-weight: 700; font-size: 12px; min-width: 86px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .ag-title { flex: 1; font-weight: 600; }
+    .ag-sub { font-size: 11px; color: var(--mut); font-weight: 400; margin-top: 1px; }
+    .ag-item.gap { color: var(--mut); }
+    .ag-item.gap .ag-title { font-weight: 500; color: var(--free); }
+    .ag-now { border-left: 3px solid var(--accent); padding-left: 8px; margin-left: -11px; }
+    .tag { font-size: 10px; font-weight: 700; border-radius: 99px; padding: 2px 8px; white-space: nowrap; }
+    .tag.confirmed { background: #D1FAE5; color: #065F46; }
+    .tag.pending { background: #FEF3C7; color: #92400E; }
+    .tag.cal { background: var(--paper); color: var(--mut); border: 1px solid var(--line); }
+
+    /* tasks */
+    .task { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
+    .task:first-of-type { border-top: none; }
+    .task input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--free); }
+    .task .t-est { font-size: 11px; color: var(--mut); }
+    .task.done .t-text { text-decoration: line-through; color: var(--mut); }
+    .slot-suggest { font-size: 10.5px; font-weight: 600; color: var(--free); background: var(--free-soft);
+      border: 1px solid var(--free-border); border-radius: 99px; padding: 2px 8px; cursor: pointer; white-space: nowrap; }
+    .slot-suggest:hover { background: var(--free); color: #fff; }
+    .slot-suggest.placed { background: var(--free); color: #fff; cursor: default; }
+
+    /* inbox */
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab { font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 99px;
+      border: 1px solid var(--line); background: var(--card); color: var(--mut); cursor: pointer; }
+    .tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .ibx { display: flex; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 13px; align-items: flex-start; }
+    .ibx:first-of-type { border-top: none; }
+    .ibx.done .ibx-text { text-decoration: line-through; color: var(--mut); }
+    .src { font-size: 10px; font-weight: 700; color: #fff; border-radius: 6px; padding: 3px 7px; min-width: 58px;
+      text-align: center; flex-shrink: 0; margin-top: 1px; }
+    .src.slack { background: #4A154B; } .src.gmail { background: #C5221F; } .src.zendesk { background: #03363D; }
+    .src.sheets { background: #188038; } .src.timesync { background: var(--free); }
+    .ibx-main { flex: 1; min-width: 0; }
+    .ibx-from { font-weight: 700; font-size: 12.5px; }
+    .ibx-text { color: var(--ink-2); margin-top: 1px; }
+    .ibx-meta { display: flex; gap: 8px; align-items: center; margin-top: 5px; flex-wrap: wrap; }
+    .cat { font-size: 10px; font-weight: 700; border-radius: 99px; padding: 2px 8px; }
+    .cat.fyi { background: #E0E7FF; color: #3730A3; }
+    .cat.reply { background: #FEF3C7; color: #92400E; }
+    .cat.finish { background: #FEE2E2; color: #991B1B; }
+    .due { font-size: 10.5px; font-weight: 600; color: var(--busy); }
+    .age { font-size: 10.5px; color: var(--mut); }
+    .ibx-actions { display: flex; gap: 5px; flex-shrink: 0; }
+    .mini { font-family: inherit; font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: 7px;
+      border: 1px solid var(--line); background: var(--card); cursor: pointer; white-space: nowrap; }
+    .mini:hover { background: var(--paper); }
+    .mini.go { background: var(--free); border-color: var(--free); color: #fff; }
+    .count-dot { display: inline-block; min-width: 17px; text-align: center; background: var(--busy); color: #fff;
+      font-size: 10px; font-weight: 700; border-radius: 99px; padding: 1px 5px; margin-left: 5px; }
+  </style>
+</head>
+<body>
+  <div id="app"><div class="loading">Loading dashboard…</div></div>
+
+  <script>
+  (() => {
+    const $ = (sel, el = document) => el.querySelector(sel);
+    const app = $("#app");
+    const VIEWER_TZ = "Asia/Taipei";
+
+    /* ── mock data: what came at you today from every tool ── */
+    let INBOX = [
+      { id: "i1", src: "slack",   from: "Lisa Park (DM)",          text: "Can you review the Q3 budget doc before Thursday? I need your numbers for the exec deck.",
+        cat: "reply",  due: "Thu", age: "2 h" },
+      { id: "i2", src: "timesync",from: "Sarah Chen",              text: "Q3 roadmap (16:00–17:00 today) is waiting for your Accept.",
+        cat: "reply",  due: "today", age: "3 h" },
+      { id: "i3", src: "zendesk", from: "Ticket #4521 · Acme Corp",text: "Customer calendar sync fails after password change — assigned to you.",
+        cat: "finish", due: "today", age: "1 h" },
+      { id: "i4", src: "sheets",  from: "Q3 planning sheet",       text: "Your OKR row is still empty — team deadline is tomorrow.",
+        cat: "finish", due: "tomorrow", age: "1 d" },
+      { id: "i5", src: "gmail",   from: "HR · People Ops",         text: "Annual self-review form — submit by June 20.",
+        cat: "finish", due: "Jun 20", age: "4 h" },
+      { id: "i6", src: "slack",   from: "#design · Mei Lin",       text: "@vimal the new onboarding mockups are ready for your look.",
+        cat: "reply",  due: null, age: "5 h" },
+      { id: "i7", src: "timesync",from: "Weekly design sync",      text: "Open action item: schedule usability test with 3 users.",
+        cat: "finish", due: null, age: "2 d" },
+      { id: "i8", src: "gmail",   from: "Comms",                   text: "All-hands moved to Friday 14:00 — no action needed.",
+        cat: "fyi",    due: null, age: "6 h" },
+      { id: "i9", src: "gmail",   from: "Industry digest",         text: "5 product reads for this week.",
+        cat: "fyi",    due: null, age: "8 h" },
+    ].map((x) => ({ ...x, status: "open" }));
+
+    const AGENDA = [
+      { t: "09:30–10:30", title: "Standup", tag: "cal",       sub: "Google Calendar" },
+      { t: "10:30–13:00", title: "Free — 2.5 h open", gap: true, sub: "good window for deep tasks" },
+      { t: "13:00–13:30", title: "Weekly design sync", tag: "confirmed", sub: "with Mei, Arjun · Prep brief ready" },
+      { t: "14:00–15:00", title: "Focus block", tag: "cal",   sub: "Google Calendar" },
+      { t: "15:00–16:00", title: "Free — 1 h open", gap: true, sub: "" },
+      { t: "16:00–17:00", title: "Q3 roadmap", tag: "pending", sub: "with Sarah, Mei, Arjun · needs your Accept" },
+    ];
+
+    let TASKS = [
+      { id: "t1", text: "Write usability test script", est: "1 h",  slot: "today 10:30–11:30", placed: false, done: false },
+      { id: "t2", text: "Fill OKR row in Q3 sheet",    est: "30 m", slot: "today 11:30–12:00", placed: false, done: false },
+      { id: "t3", text: "Prepare Q3 budget numbers",   est: "1 h",  slot: "Thu 09:00–10:00",   placed: false, done: false },
+    ];
+
+    let tab = "all";
+
+    const CATS = { reply: "🟠 Needs reply", finish: "🔴 To finish", fyi: "🔵 FYI" };
+    const count = (c) => INBOX.filter((x) => x.status === "open" && x.cat === c).length;
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    function briefText() {
+      const replies = count("reply"), finishes = count("finish");
+      return `You have <b>4 calendar items</b> today — the <b>Q3 roadmap at 16:00 still needs your Accept</b>. ` +
+        `<b>${replies} message${replies === 1 ? "" : "s"} need a reply</b> — Lisa's budget review is the most urgent (exec deck, Thursday). ` +
+        `<b>${finishes} things to finish</b> — Zendesk <b>#4521 is due today</b>; your OKR row is due tomorrow. ` +
+        `Your 10:30–13:00 gap fits the usability script and the OKR sheet — both are pre-placed below, one click to lock in.`;
+    }
+
+    function clock(tz) {
+      try { return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()); }
+      catch { return "--:--"; }
+    }
+
+    function render() {
+      const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const open = INBOX.filter((x) => x.status === "open");
+      const shown = tab === "all" ? open : tab === "done" ? INBOX.filter((x) => x.status === "done") : open.filter((x) => x.cat === tab);
+
+      app.innerHTML = `
+      <div class="app"><div class="wrap">
+        <div class="topbar">
+          <div class="brand">
+            <h1>Today<span class="demo-badge">DEMO</span></h1>
+            <p>${esc(today)} · everything that needs you, from every tool, in one place.</p>
+          </div>
+          <div class="userchip">
+            <div class="who-initials" style="width:30px;height:30px;font-size:11px">VD</div>
+            <span class="uname">Alex Chen</span>
+            <a class="btn ghost sm" href="/demo.html" style="text-decoration:none">Scheduling board →</a>
+          </div>
+        </div>
+
+        <div class="brief">
+          <h2>Morning brief<span class="ai-tag">AI</span></h2>
+          <p>${briefText()}</p>
+          <div class="clockrow">
+            <span>🇹🇼 You <b>${clock("Asia/Taipei")}</b></span>
+            <span>🇸🇬 Mei <b>${clock("Asia/Singapore")}</b></span>
+            <span>🇮🇳 Arjun <b>${clock("Asia/Kolkata")}</b></span>
+            <span>🇬🇧 Sarah <b>${clock("Europe/London")}</b></span>
+            <span>🇺🇸 Lisa <b>${clock("America/New_York")}</b></span>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div>
+            <div class="card">
+              <div class="card-title">Agenda</div>
+              ${AGENDA.map((a) => `
+                <div class="ag-item${a.gap ? " gap" : ""}">
+                  <div class="ag-time">${a.t}</div>
+                  <div class="ag-title">${esc(a.title)}${a.sub ? `<div class="ag-sub">${esc(a.sub)}</div>` : ""}</div>
+                  ${a.tag ? `<span class="tag ${a.tag}">${a.tag === "cal" ? "calendar" : a.tag}</span>` : ""}
+                </div>`).join("")}
+            </div>
+
+            <div class="card">
+              <div class="card-title">My tasks</div>
+              ${TASKS.map((t) => `
+                <div class="task${t.done ? " done" : ""}">
+                  <input type="checkbox" data-tdone="${t.id}" ${t.done ? "checked" : ""}>
+                  <span class="t-text" style="flex:1">${esc(t.text)}</span>
+                  <span class="t-est">${t.est}</span>
+                  ${t.done ? "" : `<button class="slot-suggest${t.placed ? " placed" : ""}" data-place="${t.id}">${t.placed ? "✓ on calendar" : "▸ " + esc(t.slot)}</button>`}
+                </div>`).join("")}
+              <div style="font-size:11px;color:var(--mut);margin-top:10px">Suggested slots come from today's free gaps on your own calendar.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Inbox — everything that needs you</div>
+            <div class="tabs">
+              <button class="tab${tab === "all" ? " on" : ""}" data-tab="all">All<span class="count-dot">${open.length}</span></button>
+              <button class="tab${tab === "reply" ? " on" : ""}" data-tab="reply">🟠 Needs reply (${count("reply")})</button>
+              <button class="tab${tab === "finish" ? " on" : ""}" data-tab="finish">🔴 To finish (${count("finish")})</button>
+              <button class="tab${tab === "fyi" ? " on" : ""}" data-tab="fyi">🔵 FYI (${count("fyi")})</button>
+              <button class="tab${tab === "done" ? " on" : ""}" data-tab="done">✅ Done (${INBOX.filter((x) => x.status === "done").length})</button>
+            </div>
+            ${shown.length === 0 ? `<div style="font-size:13px;color:var(--mut);padding:14px 0">Nothing here. 🎉</div>` : ""}
+            ${shown.map((x) => `
+              <div class="ibx${x.status === "done" ? " done" : ""}">
+                <span class="src ${x.src}">${x.src}</span>
+                <div class="ibx-main">
+                  <div class="ibx-from">${esc(x.from)}</div>
+                  <div class="ibx-text">${esc(x.text)}</div>
+                  <div class="ibx-meta">
+                    <span class="cat ${x.cat}">${CATS[x.cat]}</span>
+                    ${x.due ? `<span class="due">due ${esc(x.due)}</span>` : ""}
+                    <span class="age">${esc(x.age)} ago</span>
+                  </div>
+                </div>
+                <div class="ibx-actions">
+                  ${x.status === "open" ? `
+                    <button class="mini go" data-done="${x.id}">${x.cat === "reply" ? "✓ Replied" : x.cat === "fyi" ? "✓ Got it" : "✓ Done"}</button>
+                    <button class="mini" data-snooze="${x.id}" title="Hide until tomorrow morning">💤</button>
+                    <button class="mini" title="Open in ${esc(x.src)} (demo)">↗</button>` : `
+                    <button class="mini" data-reopen="${x.id}">↩ Reopen</button>`}
+                </div>
+              </div>`).join("")}
+            <div style="font-size:11px;color:var(--mut);margin-top:12px">
+              💤 Snoozed items return tomorrow morning and appear in your brief. In the live app, items arrive automatically
+              from Slack (flag with ⭐), Gmail, Zendesk and TimeSync — AI sorts them into these three buckets.
+            </div>
+          </div>
+        </div>
+      </div></div>`;
+
+      bind();
+    }
+
+    function bind() {
+      document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.tab; render(); }));
+      document.querySelectorAll("[data-done]").forEach((b) => b.addEventListener("click", () => {
+        INBOX.find((x) => x.id === b.dataset.done).status = "done"; render();
+      }));
+      document.querySelectorAll("[data-snooze]").forEach((b) => b.addEventListener("click", () => {
+        INBOX.find((x) => x.id === b.dataset.snooze).status = "snoozed"; render();
+      }));
+      document.querySelectorAll("[data-reopen]").forEach((b) => b.addEventListener("click", () => {
+        INBOX.find((x) => x.id === b.dataset.reopen).status = "open"; render();
+      }));
+      document.querySelectorAll("[data-tdone]").forEach((cb) => cb.addEventListener("change", () => {
+        TASKS.find((t) => t.id === cb.dataset.tdone).done = cb.checked; render();
+      }));
+      document.querySelectorAll("[data-place]").forEach((b) => b.addEventListener("click", () => {
+        TASKS.find((t) => t.id === b.dataset.place).placed = true; render();
+      }));
+    }
+
+    render();
+    setInterval(render, 60000); // keep clocks fresh
+  })();
+  </script>
+</body>
+</html>
