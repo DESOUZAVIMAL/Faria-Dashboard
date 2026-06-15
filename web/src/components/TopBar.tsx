@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, CalendarRange, CalendarDays } from "lucide-react";
-import { TEAM } from "@/lib/data";
+import { useMe } from "@/lib/queries";
 
 const NAV = [
   { to: "/today", label: "Today", icon: LayoutDashboard },
@@ -8,7 +8,15 @@ const NAV = [
   { to: "/week", label: "Week", icon: CalendarDays },
 ];
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
 export function TopBar() {
+  const { data: me } = useMe();
+
   return (
     <div className="sticky top-0 z-30 mb-6 border-b border-border bg-background/60 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1200px] items-center gap-5 px-6 py-3.5">
@@ -19,7 +27,6 @@ export function TopBar() {
           </span>
         </div>
 
-        {/* nav */}
         <nav className="flex items-center gap-1">
           {NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -39,20 +46,15 @@ export function TopBar() {
           ))}
         </nav>
 
-        <div className="ml-auto hidden items-center gap-[18px] text-[12.5px] text-muted-foreground xl:flex">
-          {TEAM.map((t) => (
-            <div key={t.name}>
-              {t.flag} {t.name}{" "}
-              <b className="font-semibold tabular-nums text-foreground">{t.clock}</b>
+        <div className="ml-auto flex items-center gap-2.5">
+          {me?.picture ? (
+            <img src={me.picture} alt="" className="h-[34px] w-[34px] rounded-full" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="ts-glow-primary grid h-[34px] w-[34px] place-items-center rounded-full bg-gradient-to-br from-primary to-accent2 text-[13px] font-bold text-white">
+              {initials(me?.name || "")}
             </div>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2.5 border-l border-border pl-[18px]">
-          <div className="ts-glow-primary grid h-[34px] w-[34px] place-items-center rounded-full bg-gradient-to-br from-primary to-accent2 text-[13px] font-bold text-white">
-            AC
-          </div>
-          <div className="hidden text-[13px] font-semibold sm:block">Alex Chen</div>
+          )}
+          <div className="hidden text-[13px] font-semibold sm:block">{me?.name || ""}</div>
         </div>
       </div>
     </div>
