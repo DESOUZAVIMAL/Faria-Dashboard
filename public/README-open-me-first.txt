@@ -1,15 +1,14 @@
-Ocelli — Work Dashboard preview
-===============================
+Ocelli — interactive demo
+=========================
+Double-click "ocelli-demo.html" to open it in any web browser
+(Chrome, Edge, Safari, Firefox). No login, no install, sample data.
 
-Two clickable demos (sample data, no login, nothing connects to a real account):
+Try it:
+- Today tab: click the inbox tabs, mark items Done/Snooze, type in the
+  "Add an item" box (it auto-sorts), tick off tasks.
+- Schedule tab: click people to add/remove them — the green "everyone
+  free" bar recalculates live. (Try removing Lisa Park / New York.)
+- Week tab: heatmap of the best times.
 
-1. ocelli-demo-rules.html   — the dashboard running on the rules engine (no AI)
-2. ocelli-demo-ai.html      — the same dashboard with the AI layer switched on
-                              (every AI feature is tagged with a ✦ marker)
-
-HOW TO OPEN: double-click either file — it opens in any web browser
-(Chrome, Edge, Safari, Firefox). No install needed. Best on a laptop/desktop.
-
-Tip: open the rules file first, then the AI file, to see exactly what AI adds.
-
-— Built as a preview before wider rollout.
+Connected sources shown: Slack, Gmail, Calendar (Zendesk & Sheets can be added).
+Best viewed on a laptop/desktop.

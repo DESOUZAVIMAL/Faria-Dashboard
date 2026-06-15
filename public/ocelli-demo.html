@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ocelli — interactive demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070A14; --card:rgba(20,27,48,.55); --line:rgba(255,255,255,.08);
+    --ink:#EAF0FF; --ink2:#AEB9D6; --mut:#6B779C;
+    --accent:#6D8BFF; --accent2:#A78BFA; --cyan:#5EEAD4;
+    --reply:#FBBF24; --finish:#FB7185; --fyi:#60A5FA; --free:#34D399;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding-bottom:60px;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:-2;background:
+    radial-gradient(60% 50% at 12% 0%,rgba(109,139,255,.18),transparent 60%),
+    radial-gradient(50% 45% at 92% 8%,rgba(167,139,250,.16),transparent 60%),
+    radial-gradient(55% 55% at 70% 100%,rgba(94,234,212,.09),transparent 60%),var(--bg)}
+  body::after{content:"";position:fixed;inset:-50%;z-index:-1;opacity:.35;
+    background:conic-gradient(from 0deg,transparent,rgba(109,139,255,.08),transparent 30%);animation:spin 30s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-.3px}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .glass{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 18px 44px rgba(0,0,0,.4)}
+
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:40;backdrop-filter:blur(16px);background:rgba(7,10,20,.7);border-bottom:1px solid var(--line)}
+  .topbar .row{max-width:1160px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 22px}
+  .logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk';font-weight:700;font-size:19px;
+    background:linear-gradient(90deg,#fff,#9db4ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .logo .eye{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 18%,var(--accent) 22% 52%,#0b1020 56%);box-shadow:0 0 12px rgba(109,139,255,.7)}
+  .nav{display:flex;gap:5px;margin-left:8px}
+  .nav button{font-family:inherit;font-size:13px;font-weight:600;color:var(--ink2);background:none;border:0;padding:7px 13px;border-radius:99px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:6px}
+  .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav button.on{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 4px 16px rgba(109,139,255,.4)}
+  .demo-tag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a1020;background:var(--cyan);border-radius:99px;padding:4px 10px}
+  .me{display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid var(--line)}
+  .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+
+  .view{display:none;padding-top:24px}.view.on{display:block}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:1.3px;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+  .panel{padding:18px 20px;margin-bottom:18px}
+  .panel h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:9px}
+  .panel h3 .count{font-size:11px;font-weight:700;color:var(--ink2);background:rgba(255,255,255,.06);padding:2px 9px;border-radius:99px;border:1px solid var(--line)}
+
+  /* brief */
+  .brief{padding:22px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+  .brief::before{content:"";position:absolute;top:-40%;right:-8%;width:300px;height:300px;background:radial-gradient(circle,rgba(109,139,255,.28),transparent 65%);filter:blur(8px)}
+  .brief .r{display:flex;align-items:center;gap:11px;margin-bottom:8px;position:relative}
+  .brief h2{font-size:19px}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.6px;padding:4px 10px;border-radius:99px;background:rgba(109,139,255,.18);color:#bcd0ff;border:1px solid rgba(109,139,255,.4)}
+  .brief p{font-size:13.5px;color:var(--ink2);position:relative;max-width:84ch}.brief b{color:#fff}
+  .stats{display:flex;gap:11px;margin-top:15px;flex-wrap:wrap;position:relative}
+  .stat{flex:1;min-width:108px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .stat .n{font-family:'Space Grotesk';font-size:23px;font-weight:700}.stat .l{font-size:11px;color:var(--mut);margin-top:1px}
+  .stat.r .n{color:var(--reply)}.stat.f .n{color:var(--finish)}.stat.i .n{color:var(--fyi)}.stat.g .n{color:var(--free)}
+
+  .grid{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+  .ag{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+  .ag:first-of-type{border-top:none}
+  .ag .t{font-weight:700;font-size:11.5px;min-width:92px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .ag .ttl{font-weight:600}.ag .sub{font-size:11px;color:var(--mut)}
+  .ag.free{border-radius:10px;margin:2px -8px;padding:9px 8px;background:linear-gradient(90deg,rgba(52,211,153,.12),transparent)}
+  .ag.free .ttl{color:var(--free)}.ag .body{flex:1}
+  .tag{font-size:9.5px;font-weight:700;border-radius:99px;padding:2px 9px;white-space:nowrap;height:fit-content;align-self:flex-start}
+  .tag.confirmed{background:rgba(52,211,153,.15);color:var(--free)}.tag.pending{background:rgba(251,191,36,.15);color:var(--reply)}.tag.cal{background:rgba(255,255,255,.05);color:var(--mut)}
+
+  .task{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px;cursor:pointer}
+  .task:first-of-type{border-top:none}
+  .task .box{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--mut);flex-shrink:0;display:grid;place-items:center;font-size:11px;color:#06281c}
+  .task.done .box{background:var(--free);border-color:var(--free)}
+  .task.done .tt{text-decoration:line-through;color:var(--mut)}
+  .task .est{font-size:11px;color:var(--mut);margin-left:auto}
+  .slot{font-size:10px;font-weight:600;color:var(--free);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);border-radius:99px;padding:3px 9px}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+  .tab{font-family:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink2);cursor:pointer;transition:.15s}
+  .tab:hover{background:rgba(255,255,255,.07)}
+  .tab.on{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+  .add{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:11px;padding:7px 11px;margin-bottom:12px}
+  .add input{flex:1;background:none;border:0;color:var(--ink);font-size:13px;outline:none;font-family:inherit}
+  .add input::placeholder{color:var(--mut)}
+  .add button{width:26px;height:26px;border:0;border-radius:8px;background:rgba(255,255,255,.07);color:var(--ink2);cursor:pointer;font-size:16px}
+
+  .ibx{display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line);font-size:13px;animation:fade .3s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .ibx:first-of-type{border-top:none}
+  .src{font-size:9.5px;font-weight:700;color:#fff;border-radius:7px;padding:5px 8px;height:fit-content;letter-spacing:.3px}
+  .src.slack{background:linear-gradient(135deg,#7c3aed,#611f69)}
+  .src.gmail{background:linear-gradient(135deg,#f87171,#ea4335)}
+  .src.calendar{background:linear-gradient(135deg,#6D8BFF,#A78BFA)}
+  .src.sheets{background:linear-gradient(135deg,#34d399,#0f9d58)}
+  .src.zendesk{background:linear-gradient(135deg,#0ea5a3,#03363d)}
+  .ibx .b{flex:1}.ibx .from{font-weight:700}.ibx .tx{color:var(--ink2);margin-top:2px}
+  .meta{display:flex;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}
+  .chip{font-size:9.5px;font-weight:700;border-radius:99px;padding:3px 9px}
+  .chip.reply{background:rgba(251,191,36,.14);color:var(--reply)}.chip.finish{background:rgba(251,113,133,.14);color:var(--finish)}.chip.fyi{background:rgba(96,165,250,.14);color:var(--fyi)}
+  .due{font-size:10.5px;font-weight:600;color:var(--finish)}.why{font-size:10px;color:var(--mut)}
+  .acts{margin-left:auto;display:flex;gap:6px}
+  .btn{font-family:inherit;font-size:11px;font-weight:600;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink2);border-radius:9px;padding:6px 10px;cursor:pointer;transition:.15s}
+  .btn:hover{background:rgba(255,255,255,.1);color:#fff}
+  .btn.done{background:linear-gradient(90deg,var(--free),#22c79a);color:#06281c;border-color:transparent}
+  .empty{padding:28px;text-align:center;color:var(--mut);font-size:13px}
+
+  /* sources row */
+  .srcrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;font-size:12px;color:var(--mut)}
+  .srcpill{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:99px;padding:5px 11px;font-size:11.5px;font-weight:600;color:var(--ink2)}
+  .dot{width:7px;height:7px;border-radius:50%}.dot.on{background:var(--free);box-shadow:0 0 8px var(--free)}.dot.off{background:var(--mut)}
+
+  /* schedule */
+  .people{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .pchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:99px;padding:6px 12px 6px 6px;cursor:pointer;transition:.15s;user-select:none}
+  .pchip:hover{background:rgba(255,255,255,.07)}
+  .pchip .pa{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .pchip .pn{font-size:12.5px;font-weight:600}
+  .pchip.off{opacity:.4}
+  .pchip .ck{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--mut);display:grid;place-items:center;font-size:10px;color:#06281c}
+  .pchip.on .ck{background:var(--free);border-color:var(--free)}
+  .axis{position:relative;margin-left:150px;height:16px;margin-bottom:6px}
+  .axis span{position:absolute;transform:translateX(-50%);font-size:10px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .grow{display:flex;align-items:center;padding:7px 0;border-top:1px solid var(--line);transition:opacity .15s}
+  .grow:first-of-type{border-top:none}.grow.off{opacity:.32}
+  .gp{width:150px;display:flex;align-items:center;gap:8px;padding-right:10px}
+  .ga{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0}
+  .gn{font-size:12px;font-weight:600;white-space:nowrap}.gtz{font-size:9.5px;color:var(--mut);white-space:nowrap}
+  .gt{position:relative;flex:1;height:32px;border-radius:8px;background:rgba(255,255,255,.03);overflow:hidden}
+  .gw{position:absolute;top:0;height:32px;background:rgba(109,139,255,.16)}
+  .gb{position:absolute;top:5px;height:22px;border-radius:5px;background:rgba(251,113,133,.92);font-size:8.5px;font-weight:600;color:#fff;display:flex;align-items:center;padding:0 5px;overflow:hidden;white-space:nowrap}
+  .gnow{position:absolute;top:0;height:32px;width:2px;background:var(--reply);box-shadow:0 0 8px var(--reply);z-index:5}
+  .freebar{display:flex;margin-top:10px}
+  .freelab{width:150px;padding-right:10px;text-align:right;font-size:11px;font-weight:700;color:var(--free)}
+  .freetrack{position:relative;flex:1;height:30px;border-radius:8px;background:rgba(255,255,255,.03)}
+  .freeslot{position:absolute;top:0;height:30px;border-radius:8px;background:linear-gradient(90deg,rgba(52,211,153,.85),rgba(34,199,154,.85));box-shadow:0 0 12px rgba(52,211,153,.5)}
+  .freenone{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:var(--mut)}
+  .legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:13px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;color:var(--mut)}
+  .legend span{display:flex;align-items:center;gap:6px}.sw{width:15px;height:10px;border-radius:3px}
+  .bestbox{margin-top:14px;font-size:12.5px;color:var(--ink2);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:11px;padding:11px 14px}
+  .bestbox b{color:var(--free)}
+
+  /* week heat */
+  .heat{display:grid;grid-template-columns:50px repeat(7,1fr);gap:5px;margin-top:8px}
+  .heat .hh{font-size:10px;font-weight:700;color:var(--ink2);text-align:center;padding:3px 0}
+  .heat .hr{font-size:10px;color:var(--mut);text-align:right;padding-right:7px;line-height:24px;font-variant-numeric:tabular-nums}
+  .cell{height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.04);transition:.12s}
+  .cell:hover{transform:scale(1.15);border-color:rgba(255,255,255,.5)}
+  .best{margin-top:15px;border-top:1px solid var(--line);padding-top:13px}
+  .best .lbl{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.5px;margin-bottom:7px}
+  .best .b2{display:flex;align-items:center;gap:11px;padding:7px 0;font-size:13px}
+  .rank{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .best .when{font-weight:600}.best .who{color:var(--mut);font-size:11px;margin-left:auto}
+  .hd{margin-bottom:6px}.hd h2{font-size:24px}.hd p{font-size:13px;color:var(--ink2);margin-top:4px;max-width:80ch}
+</style>
+</head>
+<body>
+  <div class="topbar"><div class="row">
+    <div class="logo"><span class="eye"></span>Ocelli</div>
+    <div class="nav">
+      <button data-view="today" class="on">📋 Today</button>
+      <button data-view="schedule">🗓️ Schedule</button>
+      <button data-view="week">📊 Week</button>
+    </div>
+    <span class="demo-tag">DEMO · sample data</span>
+    <div class="me"><div class="av">AC</div></div>
+  </div></div>
+
+  <!-- TODAY -->
+  <div class="view on" id="view-today"><div class="wrap">
+    <div class="srcrow">Connected:
+      <span class="srcpill"><span class="dot on"></span>Slack</span>
+      <span class="srcpill"><span class="dot on"></span>Gmail</span>
+      <span class="srcpill"><span class="dot on"></span>Calendar</span>
+      <span class="srcpill"><span class="dot off"></span>Zendesk <span style="color:var(--mut);font-weight:400">· can be added</span></span>
+      <span class="srcpill"><span class="dot off"></span>Sheets <span style="color:var(--mut);font-weight:400">· can be added</span></span>
+    </div>
+
+    <div class="glass brief">
+      <div class="r"><h2 id="greet">Good morning, Alex 👋</h2><span class="badge">RULES · no AI</span></div>
+      <p id="brieftext"></p>
+      <div class="stats">
+        <div class="stat r"><div class="n" id="s-reply">0</div><div class="l">Needs reply</div></div>
+        <div class="stat f"><div class="n" id="s-finish">0</div><div class="l">To finish</div></div>
+        <div class="stat i"><div class="n" id="s-fyi">0</div><div class="l">FYI</div></div>
+        <div class="stat g"><div class="n">3.5h</div><div class="l">Free today</div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="glass panel">
+          <h3>Today's agenda</h3>
+          <div class="ag"><div class="t">09:30–10:30</div><div class="body"><div class="ttl">Standup</div><div class="sub">Google Calendar</div></div><span class="tag cal">cal</span></div>
+          <div class="ag free"><div class="t">10:30–13:00</div><div class="body"><div class="ttl">Free — 2.5 h open</div><div class="sub">good for deep work</div></div></div>
+          <div class="ag"><div class="t">13:00–13:30</div><div class="body"><div class="ttl">Weekly design sync</div><div class="sub">with Mei, Arjun</div></div><span class="tag confirmed">confirmed</span></div>
+          <div class="ag"><div class="t">14:00–15:00</div><div class="body"><div class="ttl">Focus block</div><div class="sub">Google Calendar</div></div><span class="tag cal">cal</span></div>
+          <div class="ag"><div class="t">16:00–17:00</div><div class="body"><div class="ttl">Q3 roadmap</div><div class="sub">needs your Accept</div></div><span class="tag pending">pending</span></div>
+        </div>
+        <div class="glass panel">
+          <h3>My tasks</h3>
+          <div id="tasks"></div>
+          <p style="font-size:11px;color:var(--mut);margin-top:9px">Tip: click a task to tick it off.</p>
+        </div>
+      </div>
+
+      <div class="glass panel">
+        <h3>Inbox — everything that needs you <span class="count" id="ibx-count">0</span></h3>
+        <div class="tabs" id="tabs"></div>
+        <div class="add">
+          <input id="addbox" placeholder="Add an item — it gets auto-sorted…" />
+          <button id="addbtn">+</button>
+        </div>
+        <div id="inbox"></div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- SCHEDULE -->
+  <div class="view" id="view-schedule"><div class="wrap">
+    <div class="hd"><div class="eyebrow">Schedule · find a time across time zones</div>
+      <h2>When is the team free?</h2>
+      <p>Every row is on <b>your</b> clock (Taipei). <b>Click a person to add or remove them</b> — the green "everyone free" bar updates live.</p>
+    </div>
+    <div class="glass panel" style="margin-top:14px">
+      <div class="people" id="people"></div>
+      <div class="axis" id="axis"></div>
+      <div id="rows"></div>
+      <div class="freebar">
+        <div class="freelab">Everyone free</div>
+        <div class="freetrack" id="freetrack"></div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:rgba(109,139,255,.4)"></span> Working hours</span>
+        <span><span class="sw" style="background:var(--finish)"></span> Busy</span>
+        <span><span class="sw" style="background:var(--free)"></span> Everyone free</span>
+        <span><span class="sw" style="background:var(--reply);width:3px"></span> Now</span>
+      </div>
+      <div class="bestbox" id="bestbox"></div>
+    </div>
+  </div></div>
+
+  <!-- WEEK -->
+  <div class="view" id="view-week"><div class="wrap">
+    <div class="hd"><div class="eyebrow">Week · best times at a glance</div>
+      <h2>Best times this week</h2>
+      <p>Brighter = more teammates free that hour. Uses the people selected on the Schedule tab.</p>
+    </div>
+    <div class="glass panel" style="margin-top:14px">
+      <div class="heat" id="heat"></div>
+      <div class="best">
+        <div class="lbl">BEST SLOTS THIS WEEK</div>
+        <div class="b2"><span class="rank">1</span><span class="when">Wed 14:00–15:00</span><span class="who">all selected free</span></div>
+        <div class="b2"><span class="rank">2</span><span class="when">Tue 13:00–14:00</span><span class="who">most free</span></div>
+        <div class="b2"><span class="rank">3</span><span class="when">Thu 09:00–10:00</span><span class="who">most free</span></div>
+      </div>
+    </div>
+  </div></div>
+
+<script>
+/* ---------- view switching ---------- */
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  b.classList.add("on");
+  document.getElementById("view-"+b.dataset.view).classList.add("on");
+  if(b.dataset.view==="week") drawHeat();
+});
+
+/* ---------- TODAY: tasks ---------- */
+const TASKS=[
+  {t:"Prepare Q3 budget numbers",e:"1 h",slot:"▸ 10:30",done:false},
+  {t:"Write usability test script",e:"1 h",slot:"▸ 11:30",done:false},
+  {t:"Fill OKR row in Q3 sheet",e:"30 m",slot:"▸ 15:00",done:false},
+];
+function drawTasks(){
+  document.getElementById("tasks").innerHTML=TASKS.map((x,i)=>
+    `<div class="task ${x.done?'done':''}" data-i="${i}"><span class="box">${x.done?'✓':''}</span>
+     <span class="tt">${x.t}</span><span class="est">${x.e}</span><span class="slot">${x.slot}</span></div>`).join("");
+  document.querySelectorAll(".task").forEach(el=>el.onclick=()=>{const i=+el.dataset.i;TASKS[i].done=!TASKS[i].done;drawTasks();});
+}
+
+/* ---------- TODAY: inbox (interactive) ---------- */
+let INBOX=[
+  {src:"slack",from:"Lisa Park (DM)",tx:"Can you review the Q3 budget doc before Thursday? I need your numbers for the exec deck.",cat:"reply",due:"due Thu",why:"question + deadline",st:"open"},
+  {src:"calendar",from:"Sarah Chen",tx:"Q3 roadmap (16:00–17:00 today) is waiting for your Accept.",cat:"reply",due:"due today",why:"awaiting your accept",st:"open"},
+  {src:"zendesk",from:"Ticket #4521 · Acme Corp",tx:"Customer calendar sync fails after password change — assigned to you.",cat:"finish",due:"due today",why:"ticket assigned to you",st:"open"},
+  {src:"sheets",from:"Q3 planning sheet",tx:"Your OKR row is still empty — team deadline is tomorrow.",cat:"finish",due:"due tomorrow",why:"task verb + deadline",st:"open"},
+  {src:"gmail",from:"HR · People Ops",tx:"Annual self-review form — submit by June 20.",cat:"finish",due:"due Jun 20",why:'"submit" + date',st:"open"},
+  {src:"slack",from:"#design · Mei Lin",tx:"@alex the new onboarding mockups are ready for your look.",cat:"reply",due:"",why:"direct mention",st:"open"},
+  {src:"gmail",from:"Comms",tx:"Office closed Monday for the public holiday. No action needed.",cat:"fyi",due:"",why:'"no action needed"',st:"open"},
+];
+let curTab="all";
+const CATLBL={reply:"Needs reply",finish:"To finish",fyi:"FYI"};
+function classify(text){
+  const t=text.toLowerCase();
+  if(/\b(fyi|newsletter|no action|no-reply|announcement)\b/.test(t)) return {cat:"fyi",why:"looks informational"};
+  if(/\b(submit|fill|complete|finish|send|deadline|due|by friday|by monday|tomorrow|assigned)\b/.test(t)) return {cat:"finish",why:"task/deadline word"};
+  if(/\?|\b(can you|could you|please|let me know|review|approve|your input)\b/.test(t)) return {cat:"reply",why:"question / request"};
+  return {cat:"reply",why:"needs a look"};
+}
+function drawTabs(){
+  const open=INBOX.filter(i=>i.st==="open");
+  const c={all:open.length,reply:open.filter(i=>i.cat==="reply").length,finish:open.filter(i=>i.cat==="finish").length,fyi:open.filter(i=>i.cat==="fyi").length,done:INBOX.filter(i=>i.st==="done").length};
+  const tabs=[["all","All"],["reply","🟠 Needs reply"],["finish","🔴 To finish"],["fyi","🔵 FYI"],["done","✅ Done"]];
+  document.getElementById("tabs").innerHTML=tabs.map(([k,l])=>`<button class="tab ${curTab===k?'on':''}" data-k="${k}">${l} ${c[k]}</button>`).join("");
+  document.querySelectorAll("#tabs .tab").forEach(b=>b.onclick=()=>{curTab=b.dataset.k;drawInbox();});
+  document.getElementById("ibx-count").textContent=c.all;
+  document.getElementById("s-reply").textContent=c.reply;
+  document.getElementById("s-finish").textContent=c.finish;
+  document.getElementById("s-fyi").textContent=c.fyi;
+  document.getElementById("brieftext").innerHTML=`You have <b>${c.reply} ${c.reply===1?'reply':'replies'} waiting</b>, <b>${c.finish} to finish</b> and ${c.fyi} FYI. Your next meeting is <b>Weekly design sync at 13:00</b>. There's a <b>2.5-hour free block this morning</b> — good for the Q3 budget numbers Lisa is waiting on.`;
+}
+function drawInbox(){
+  drawTabs();
+  const vis=INBOX.map((it,i)=>({it,i})).filter(({it})=>{
+    if(curTab==="done") return it.st==="done";
+    if(it.st!=="open") return false;
+    if(curTab==="all") return true;
+    return it.cat===curTab;
+  });
+  const box=document.getElementById("inbox");
+  if(!vis.length){box.innerHTML=`<div class="empty">Nothing here — you're all caught up. ✨</div>`;return;}
+  box.innerHTML=vis.map(({it,i})=>`
+    <div class="ibx">
+      <span class="src ${it.src}">${it.src}</span>
+      <div class="b">
+        <div class="from">${it.from}</div>
+        <div class="tx">${it.tx}</div>
+        <div class="meta">
+          <span class="chip ${it.cat}">${CATLBL[it.cat]}</span>
+          ${it.due?`<span class="due">${it.due}</span>`:""}
+          <span class="why">· why: ${it.why}</span>
+          <span class="acts">
+            ${it.st==="done"
+              ? `<button class="btn" data-act="reopen" data-i="${i}">↩ Reopen</button>`
+              : `<button class="btn done" data-act="done" data-i="${i}">✓ Done</button>
+                 <button class="btn" data-act="snooze" data-i="${i}">⏰ Snooze</button>`}
+          </span>
+        </div>
+      </div>
+    </div>`).join("");
+  box.querySelectorAll(".btn").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i, a=b.dataset.act;
+    INBOX[i].st = a==="done"?"done": a==="reopen"?"open":"snoozed";
+    drawInbox();
+  });
+}
+document.getElementById("addbtn").onclick=addItem;
+document.getElementById("addbox").addEventListener("keydown",e=>{if(e.key==="Enter")addItem();});
+function addItem(){
+  const inp=document.getElementById("addbox");const v=inp.value.trim();if(!v)return;
+  const {cat,why}=classify(v);
+  INBOX.unshift({src:"manual",from:"You added",tx:v,cat,due:"",why,st:"open"});
+  inp.value="";curTab="all";drawInbox();
+}
+
+/* ---------- SCHEDULE (interactive availability) ---------- */
+const pct=h=>(h/24*100)+"%";
+const PEOPLE=[
+  {id:"AC",name:"Alex (you)",tz:"Taipei",work:[9,18],busy:[[9.5,10.5,"Standup"],[14,15,"Focus"]],on:true},
+  {id:"ML",name:"Mei Lin",tz:"Singapore",work:[9,18],busy:[[10,11.5,"Call"],[17.25,17.75,"Coffee"]],on:true},
+  {id:"AR",name:"Arjun Rao",tz:"Bangalore",work:[12.5,21.5],busy:[[15,15.75,"Lunch"],[18.5,19.5,"Review"]],on:true},
+  {id:"SC",name:"Sarah Chen",tz:"London",work:[15,23],busy:[[15,15.75,"Inbox"],[21,22,"1:1"]],on:true},
+  {id:"LP",name:"Lisa Park",tz:"New York",work:[21,24],busy:[[21,21.75,"Exec sync"]],on:true},
+];
+let NOW=11;
+try{ NOW = +new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Taipei",hour:"numeric",hour12:false}).format(new Date()); }catch(e){}
+function drawPeople(){
+  document.getElementById("people").innerHTML=PEOPLE.map((p,i)=>
+    `<div class="pchip ${p.on?'on':'off'}" data-i="${i}"><span class="ck">${p.on?'✓':''}</span><span class="pa">${p.id}</span><span class="pn">${p.name}</span></div>`).join("");
+  document.querySelectorAll(".pchip").forEach(el=>el.onclick=()=>{const i=+el.dataset.i;PEOPLE[i].on=!PEOPLE[i].on;drawSchedule();});
+}
+function drawRows(){
+  const ax=document.getElementById("axis");ax.innerHTML="";
+  [0,3,6,9,12,15,18,21].forEach(h=>{const s=document.createElement("span");s.style.left=pct(h);s.textContent=String(h).padStart(2,"0");ax.appendChild(s);});
+  document.getElementById("rows").innerHTML=PEOPLE.map(p=>{
+    const busy=p.busy.map(b=>`<div class="gb" style="left:${pct(b[0])};width:${pct(b[1]-b[0])}" title="${b[2]}">${b[2]}</div>`).join("");
+    return `<div class="grow ${p.on?'':'off'}">
+      <div class="gp"><div class="ga">${p.id}</div><div><div class="gn">${p.name}</div><div class="gtz">${p.tz}</div></div></div>
+      <div class="gt">
+        <div class="gw" style="left:${pct(p.work[0])};width:${pct(p.work[1]-p.work[0])}"></div>
+        ${busy}
+        <div class="gnow" style="left:${pct(NOW)}"></div>
+      </div></div>`;
+  }).join("");
+}
+function freeSlots(){
+  const sel=PEOPLE.filter(p=>p.on);
+  if(!sel.length) return [];
+  const isFree=(p,h)=>{ if(h<p.work[0]||h>=p.work[1]) return false; for(const b of p.busy){ if(h>=b[0]&&h<b[1]) return false; } return true; };
+  const slots=[];let run=null;
+  for(let h=0;h<=24;h+=0.5){
+    const all = h<24 && sel.every(p=>isFree(p,h));
+    if(all&&run===null) run=h;
+    if(!all&&run!==null){ if(h-run>=0.5) slots.push([run,h]); run=null; }
+  }
+  return slots;
+}
+const fmt=h=>{const H=Math.floor(h)%24,M=Math.round((h-Math.floor(h))*60);return String(H).padStart(2,"0")+":"+String(M).padStart(2,"0");};
+function drawFree(){
+  const slots=freeSlots();const tr=document.getElementById("freetrack");
+  const sel=PEOPLE.filter(p=>p.on).length;
+  if(!slots.length){
+    tr.innerHTML=`<div class="freenone">No time works for all ${sel} selected — try removing someone or check the Week tab</div>`;
+  }else{
+    tr.innerHTML=slots.map(s=>`<div class="freeslot" style="left:${pct(s[0])};width:${pct(s[1]-s[0])}" title="${fmt(s[0])}–${fmt(s[1])} everyone free"></div>`).join("");
+  }
+  const best=slots.slice().sort((a,b)=>(b[1]-b[0])-(a[1]-a[0]))[0];
+  document.getElementById("bestbox").innerHTML = best
+    ? `✅ Best window today for the <b>${sel} selected</b>: <b>${fmt(best[0])}–${fmt(best[1])}</b>. Click people above to see how it changes.`
+    : `⏶ No window fits all <b>${sel}</b> today (New York wakes as Asia signs off). Try removing Lisa, or use the Week tab for better days.`;
+}
+function drawSchedule(){drawPeople();drawRows();drawFree();}
+
+/* ---------- WEEK heatmap (depends on selected count) ---------- */
+function drawHeat(){
+  const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],hrs=[8,9,10,11,12,13,14,15,16,17,18];
+  const colors=["#161d33","#26345f","#3a55a8","#5b7df0","#8ca8ff"];
+  const maxN=Math.max(1,PEOPLE.filter(p=>p.on).length);
+  const heat=document.getElementById("heat");heat.innerHTML="";
+  heat.appendChild(Object.assign(document.createElement("div"),{className:"hh"}));
+  days.forEach(d=>heat.appendChild(Object.assign(document.createElement("div"),{className:"hh",textContent:d})));
+  hrs.forEach(h=>{
+    heat.appendChild(Object.assign(document.createElement("div"),{className:"hr",textContent:h+":00"}));
+    days.forEach((d,di)=>{
+      let base=maxN-Math.abs(h-13)*0.5; if(di>4)base-=maxN*0.6; if(h<9||h>17)base-=1.2;
+      const free=Math.max(0,Math.min(maxN,Math.round(base+((h*7+di)%3)-1)));
+      const lvl=Math.round(free/maxN*4);
+      const c=document.createElement("div");c.className="cell";c.style.background=colors[Math.max(0,lvl)]||"#10152a";
+      if(lvl>=4)c.style.boxShadow="0 0 8px rgba(140,168,255,.5)";
+      c.title=`${d} ${h}:00 — ${free} of ${maxN} free`;heat.appendChild(c);
+    });
+  });
+}
+
+/* init */
+document.getElementById("greet").textContent =
+  (NOW<12?"Good morning":NOW<18?"Good afternoon":"Good evening")+", Alex 👋";
+drawTasks();drawInbox();drawSchedule();
+</script>
+</body>
+</html>
