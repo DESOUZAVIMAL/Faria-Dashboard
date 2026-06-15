@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ocelli — Work Dashboard (Rules demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070A14; --card:rgba(20,27,48,.55); --line:rgba(255,255,255,.08);
+    --ink:#EAF0FF; --ink2:#AEB9D6; --mut:#6B779C;
+    --accent:#6D8BFF; --accent2:#A78BFA; --cyan:#5EEAD4;
+    --reply:#FBBF24; --finish:#FB7185; --fyi:#60A5FA; --free:#34D399;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--bg);
+    -webkit-font-smoothing:antialiased;line-height:1.55;padding-bottom:60px;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:-2;background:
+    radial-gradient(60% 50% at 12% 0%,rgba(109,139,255,.18),transparent 60%),
+    radial-gradient(50% 45% at 92% 8%,rgba(167,139,250,.16),transparent 60%),
+    radial-gradient(55% 55% at 70% 100%,rgba(94,234,212,.09),transparent 60%),var(--bg)}
+  body::after{content:"";position:fixed;inset:-50%;z-index:-1;opacity:.35;
+    background:conic-gradient(from 0deg,transparent,rgba(109,139,255,.08),transparent 30%);animation:spin 30s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-.4px}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+  .glass{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 50px rgba(0,0,0,.4)}
+  section{scroll-margin-top:80px;padding:46px 0}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:10px}
+  .lead{color:var(--ink2);font-size:16px;max-width:70ch}
+
+  /* top nav */
+  .topbar{position:sticky;top:0;z-index:40;backdrop-filter:blur(16px);background:rgba(7,10,20,.7);
+    border-bottom:1px solid var(--line)}
+  .topbar .wrap{display:flex;align-items:center;gap:18px;padding:13px 24px}
+  .logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk';font-weight:700;font-size:20px;
+    background:linear-gradient(90deg,#fff,#9db4ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .logo .eye{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 18%,var(--accent) 22% 52%,#0b1020 56%);
+    box-shadow:0 0 14px rgba(109,139,255,.7)}
+  .navlinks{display:flex;gap:4px;margin-left:6px}
+  .navlinks a{font-size:13px;font-weight:600;color:var(--ink2);text-decoration:none;padding:7px 12px;border-radius:99px;transition:.15s}
+  .navlinks a:hover{background:rgba(255,255,255,.07);color:#fff}
+  .mode{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.6px;padding:5px 12px;border-radius:99px;
+    border:1px solid var(--line);color:var(--ink2);background:rgba(255,255,255,.04)}
+  .mode b{color:#fff}
+  .demo-tag{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a1020;background:var(--cyan);border-radius:99px;padding:3px 9px}
+
+  /* hero */
+  .hero{padding:64px 0 30px}
+  .hero h1{font-size:48px;line-height:1.05;margin-bottom:16px}
+  .hero h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .sub{font-size:18px;color:var(--ink2);max-width:64ch;margin-bottom:26px}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .pill-link{font-size:13px;font-weight:600;text-decoration:none;padding:11px 18px;border-radius:99px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 24px rgba(109,139,255,.35)}
+  .pill-link.ghost{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink)}
+
+  /* problem -> solution cards */
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.twocol{grid-template-columns:1fr}}
+  .pcard{padding:22px 24px}
+  .pcard h3{font-size:17px;margin-bottom:12px}
+  .pcard ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .pcard li{font-size:13.5px;color:var(--ink2);display:flex;gap:9px;align-items:flex-start}
+  .pcard li .x{color:var(--finish);font-weight:700}
+  .pcard li .c{color:var(--free);font-weight:700}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{padding:20px;text-align:left}
+  .step .n{font-family:'Space Grotesk';font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px}
+  .step h4{font-size:15px;margin-bottom:6px;font-family:'Space Grotesk'}
+  .step p{font-size:13px;color:var(--ink2)}
+
+  /* dashboard mock */
+  .panel{padding:20px 22px}
+  .panel h3{font-size:15px;margin-bottom:15px;display:flex;align-items:center;gap:9px}
+  .panel h3 .count{font-size:11px;font-weight:700;color:var(--ink2);background:rgba(255,255,255,.06);padding:2px 9px;border-radius:99px;border:1px solid var(--line)}
+  .dash{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start;margin-top:18px}
+  @media(max-width:900px){.dash{grid-template-columns:1fr}}
+
+  .brief{padding:22px 26px;margin-bottom:18px;position:relative;overflow:hidden}
+  .brief::before{content:"";position:absolute;top:-40%;right:-8%;width:320px;height:320px;background:radial-gradient(circle,rgba(109,139,255,.30),transparent 65%);filter:blur(8px)}
+  .brief .row{display:flex;align-items:center;gap:11px;margin-bottom:9px;position:relative}
+  .brief h3{font-size:19px}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.7px;padding:4px 10px;border-radius:99px}
+  .badge.rules{background:rgba(109,139,255,.18);color:#bcd0ff;border:1px solid rgba(109,139,255,.4)}
+  .brief p{font-size:14px;color:var(--ink2);position:relative;max-width:84ch}
+  .brief b{color:#fff}
+  .stats{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;position:relative}
+  .stat{flex:1;min-width:110px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+  .stat .n{font-family:'Space Grotesk';font-size:24px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--mut);margin-top:2px}
+  .stat.r .n{color:var(--reply)}.stat.f .n{color:var(--finish)}.stat.i .n{color:var(--fyi)}.stat.g .n{color:var(--free)}
+
+  .ag{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+  .ag:first-of-type{border-top:none}
+  .ag .t{font-weight:700;font-size:11.5px;min-width:92px;color:var(--ink2);font-variant-numeric:tabular-nums}
+  .ag .ttl{font-weight:600}.ag .sub{font-size:11px;color:var(--mut)}
+  .ag.free{border-radius:10px;margin:2px -8px;padding:10px 8px;background:linear-gradient(90deg,rgba(52,211,153,.12),transparent)}
+  .ag.free .ttl{color:var(--free)}
+  .ag .body{flex:1}
+  .tag{font-size:9.5px;font-weight:700;border-radius:99px;padding:2px 9px;white-space:nowrap;height:fit-content;align-self:flex-start}
+  .tag.confirmed{background:rgba(52,211,153,.15);color:var(--free)}
+  .tag.pending{background:rgba(251,191,36,.15);color:var(--reply)}
+  .tag.cal{background:rgba(255,255,255,.05);color:var(--mut)}
+
+  .task{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+  .task:first-of-type{border-top:none}
+  .task .box{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--mut);flex-shrink:0}
+  .task .est{font-size:11px;color:var(--mut);margin-left:auto}
+  .slot{font-size:10px;font-weight:600;color:var(--free);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);border-radius:99px;padding:3px 9px}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{font-family:inherit;font-size:12px;font-weight:600;padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink2);cursor:pointer;transition:.15s}
+  .tab:hover{background:rgba(255,255,255,.07)}
+  .tab.on{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+  .ibx{display:flex;gap:13px;padding:14px 0;border-top:1px solid var(--line);font-size:13px}
+  .ibx:first-of-type{border-top:none}
+  .src{font-size:9.5px;font-weight:700;color:#fff;border-radius:7px;padding:5px 8px;height:fit-content;letter-spacing:.3px}
+  .src.slack{background:linear-gradient(135deg,#7c3aed,#611f69)}
+  .src.gmail{background:linear-gradient(135deg,#f87171,#ea4335)}
+  .src.zendesk{background:linear-gradient(135deg,#0ea5a3,#03363d)}
+  .src.sheets{background:linear-gradient(135deg,#34d399,#0f9d58)}
+  .src.ocelli{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .ibx .body{flex:1}.ibx .from{font-weight:700}.ibx .txt{color:var(--ink2);margin-top:3px}
+  .meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+  .chip{font-size:9.5px;font-weight:700;border-radius:99px;padding:3px 9px}
+  .chip.reply{background:rgba(251,191,36,.14);color:var(--reply)}
+  .chip.finish{background:rgba(251,113,133,.14);color:var(--finish)}
+  .chip.fyi{background:rgba(96,165,250,.14);color:var(--fyi)}
+  .why{font-size:10.5px;color:var(--mut)}
+  .due{font-size:10.5px;font-weight:600;color:var(--finish)}.ago{font-size:10.5px;color:var(--mut)}
+
+  /* gantt */
+  .gantt{padding:20px 22px;margin-top:18px}
+  .axis{position:relative;margin-left:170px;height:18px;margin-bottom:6px}
+  .axis span{position:absolute;transform:translateX(-50%);font-size:10.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .grow{display:flex;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+  .grow:first-of-type{border-top:none}
+  .gperson{width:170px;display:flex;align-items:center;gap:9px;padding-right:10px}
+  .gav{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .gmeta{min-width:0}.gname{font-size:12.5px;font-weight:600;white-space:nowrap}.gtz{font-size:10px;color:var(--mut);white-space:nowrap}
+  .gtrack{position:relative;flex:1;height:34px;border-radius:9px;background:rgba(255,255,255,.03);overflow:hidden}
+  .gwork{position:absolute;top:0;height:34px;background:rgba(109,139,255,.16)}
+  .gbusy{position:absolute;top:5px;height:24px;border-radius:6px;background:rgba(251,113,133,.92);font-size:9px;font-weight:600;color:#fff;display:flex;align-items:center;padding:0 6px;overflow:hidden;white-space:nowrap}
+  .gnow{position:absolute;top:0;height:34px;width:2px;background:var(--reply);box-shadow:0 0 8px var(--reply);z-index:5}
+  .glegend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--mut)}
+  .glegend span{display:flex;align-items:center;gap:6px}
+  .sw{width:16px;height:11px;border-radius:3px}
+  .freenote{margin-top:14px;font-size:12.5px;color:var(--ink2);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:12px;padding:11px 14px}
+  .freenote b{color:var(--free)}
+
+  /* heatmap */
+  .heatwrap{padding:20px 22px;margin-top:18px}
+  .heat{display:grid;grid-template-columns:52px repeat(7,1fr);gap:5px;margin-top:8px}
+  .heat .hh{font-size:10px;font-weight:700;color:var(--ink2);text-align:center;padding:3px 0}
+  .heat .hr{font-size:10px;color:var(--mut);text-align:right;padding-right:7px;line-height:24px;font-variant-numeric:tabular-nums}
+  .cell{height:24px;border-radius:6px;border:1px solid rgba(255,255,255,.04)}
+  .best{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .best .lbl{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.5px;margin-bottom:8px}
+  .best .b{display:flex;align-items:center;gap:11px;padding:7px 0;font-size:13px}
+  .rank{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .best .when{font-weight:600}.best .who{color:var(--mut);font-size:11px;margin-left:auto}
+
+  /* summary table */
+  .cmp{width:100%;border-collapse:collapse;margin-top:18px;font-size:13.5px}
+  .cmp th,.cmp td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .cmp th{font-family:'Space Grotesk';font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+  .cmp td:first-child{font-weight:600}
+  .yes{color:var(--free);font-weight:700}.no{color:var(--mut)}
+  .callout{margin-top:22px;padding:20px 24px;border-radius:var(--radius);border:1px solid rgba(109,139,255,.3);
+    background:linear-gradient(120deg,rgba(109,139,255,.10),rgba(167,139,250,.06))}
+  .callout h3{font-size:16px;margin-bottom:8px}
+  .callout p{font-size:13.5px;color:var(--ink2)}
+  .footer{text-align:center;color:var(--mut);font-size:12px;padding:40px 0 0}
+</style>
+</head>
+<body>
+  <!-- NAV -->
+  <div class="topbar"><div class="wrap" style="margin:0 auto;max-width:1140px;padding:13px 24px;display:flex;align-items:center;gap:18px">
+    <div class="logo"><span class="eye"></span>Ocelli</div>
+    <div class="navlinks">
+      <a href="#overview">Overview</a><a href="#today">Today</a><a href="#schedule">Schedule</a><a href="#week">Week</a><a href="#summary">Rules vs AI</a>
+    </div>
+    <div class="mode">MODE: <b>Rules</b> (no AI)</div>
+    <span class="demo-tag">DEMO</span>
+  </div></div>
+
+  <!-- HERO -->
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">Ocelli · the extra eyes on your work</div>
+      <h1>Everything that needs you,<br><span class="grad">in one place. Nothing slips.</span></h1>
+      <p class="sub">We work across Slack, Gmail, Zendesk, Sheets and Calendar all day — and things fall through the cracks. Ocelli watches all of them, sorts what needs you, and tracks it until it's done.</p>
+      <div class="cta">
+        <a class="pill-link" href="#today">See the dashboard ↓</a>
+        <a class="pill-link ghost" href="#summary">What AI would add →</a>
+      </div>
+      <p style="margin-top:16px;font-size:12.5px;color:var(--mut)">This is a clickable preview with sample data — a 5-person team across Taipei, Singapore, Bangalore, London &amp; New York. Nothing here touches a real account. <b style="color:var(--ink2)">This version runs on rules only — zero AI, zero data sent anywhere.</b></p>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section id="overview"><div class="wrap">
+    <div class="eyebrow">The problem &amp; the fix</div>
+    <h2 style="font-size:28px;margin-bottom:18px">Why a single dashboard</h2>
+    <div class="twocol">
+      <div class="glass pcard">
+        <h3>😵 Today — scattered across tools</h3>
+        <ul>
+          <li><span class="x">✗</span> A Slack DM asks for your input — you see it, then forget</li>
+          <li><span class="x">✗</span> A Zendesk ticket is assigned to you — buried in noise</li>
+          <li><span class="x">✗</span> A Sheet row is due EOD — nobody reminded you</li>
+          <li><span class="x">✗</span> 6 apps open, no single view of "what needs me"</li>
+          <li><span class="x">✗</span> Things slip → missed deadlines, dropped balls</li>
+        </ul>
+      </div>
+      <div class="glass pcard">
+        <h3>✨ With Ocelli — one console</h3>
+        <ul>
+          <li><span class="c">✓</span> Every tool feeds into one inbox</li>
+          <li><span class="c">✓</span> Each item auto-sorted: FYI / needs reply / to finish</li>
+          <li><span class="c">✓</span> Due dates detected automatically from the text</li>
+          <li><span class="c">✓</span> Tracked until done — snooze &amp; it comes back</li>
+          <li><span class="c">✓</span> Your day, your tasks, your team's free time — at a glance</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:18px;margin:34px 0 4px">How it works — 3 steps</h3>
+    <div class="steps">
+      <div class="glass step"><div class="n">STEP 1 · INGEST</div><h4>Connect your tools</h4><p>Slack, Gmail, Zendesk, Sheets and Calendar feed items in automatically — filtered so only what's relevant to you arrives.</p></div>
+      <div class="glass step"><div class="n">STEP 2 · TRIAGE</div><h4>Auto-sort by rules</h4><p>A transparent rules engine labels each item 🔵 FYI, 🟠 needs reply, or 🔴 to finish — and shows you <i>why</i>.</p></div>
+      <div class="glass step"><div class="n">STEP 3 · TRACK</div><h4>Nothing slips</h4><p>Items stay until done. Snooze and they return next morning. Your morning brief sums up what matters.</p></div>
+    </div>
+  </div></section>
+
+  <!-- TODAY -->
+  <section id="today"><div class="wrap">
+    <div class="eyebrow">Page 1 · Today</div>
+    <h2 style="font-size:28px;margin-bottom:8px">Your morning, in one screen</h2>
+    <p class="lead">Open Ocelli and see your brief, your day's agenda, your tasks, and a triage inbox of everything that needs you.</p>
+
+    <div class="glass brief" style="margin-top:22px">
+      <div class="row"><h3>Good morning, Alex 👋</h3><span class="badge rules">RULES</span></div>
+      <p>You have <b>3 replies waiting</b>, <b>4 things to finish</b> (2 due today) and 2 FYIs. Next meeting: <b>Weekly design sync at 13:00</b>. There's a <b>2.5-hour free block this morning</b> — a good window for the Q3 budget numbers Lisa is waiting on.</p>
+      <div class="stats">
+        <div class="stat r"><div class="n">3</div><div class="l">Needs reply</div></div>
+        <div class="stat f"><div class="n">4</div><div class="l">To finish</div></div>
+        <div class="stat i"><div class="n">2</div><div class="l">FYI</div></div>
+        <div class="stat g"><div class="n">3.5h</div><div class="l">Free today</div></div>
+      </div>
+    </div>
+
+    <div class="dash">
+      <div>
+        <div class="glass panel" style="margin-bottom:18px">
+          <h3>Today's agenda</h3>
+          <div class="ag"><div class="t">09:30–10:30</div><div class="body"><div class="ttl">Standup</div><div class="sub">Google Calendar</div></div><span class="tag cal">cal</span></div>
+          <div class="ag free"><div class="t">10:30–13:00</div><div class="body"><div class="ttl">Free — 2.5 h open</div><div class="sub">good for deep work</div></div></div>
+          <div class="ag"><div class="t">13:00–13:30</div><div class="body"><div class="ttl">Weekly design sync</div><div class="sub">with Mei, Arjun</div></div><span class="tag confirmed">confirmed</span></div>
+          <div class="ag"><div class="t">14:00–15:00</div><div class="body"><div class="ttl">Focus block</div><div class="sub">Google Calendar</div></div><span class="tag cal">cal</span></div>
+          <div class="ag"><div class="t">16:00–17:00</div><div class="body"><div class="ttl">Q3 roadmap</div><div class="sub">needs your Accept</div></div><span class="tag pending">pending</span></div>
+        </div>
+        <div class="glass panel">
+          <h3>My tasks</h3>
+          <div class="task"><span class="box"></span><span>Write usability test script</span><span class="est">1 h</span><span class="slot">▸ 10:30</span></div>
+          <div class="task"><span class="box"></span><span>Fill OKR row in Q3 sheet</span><span class="est">30 m</span><span class="slot">▸ 11:30</span></div>
+          <div class="task"><span class="box"></span><span>Prepare Q3 budget numbers</span><span class="est">1 h</span><span class="slot">▸ 15:00</span></div>
+        </div>
+      </div>
+
+      <div class="glass panel">
+        <h3>Inbox — everything that needs you <span class="count">9</span></h3>
+        <div class="tabs"><button class="tab on">All 9</button><button class="tab">🟠 Reply 3</button><button class="tab">🔴 Finish 4</button><button class="tab">🔵 FYI 2</button></div>
+
+        <div class="ibx"><span class="src slack">slack</span><div class="body"><div class="from">Lisa Park (DM)</div><div class="txt">Can you review the Q3 budget doc before Thursday? I need your numbers for the exec deck.</div><div class="meta"><span class="chip reply">Needs reply</span><span class="due">due Thu</span><span class="why">· why: question + deadline</span></div></div></div>
+        <div class="ibx"><span class="src ocelli">ocelli</span><div class="body"><div class="from">Sarah Chen</div><div class="txt">Q3 roadmap (16:00–17:00 today) is waiting for your Accept.</div><div class="meta"><span class="chip reply">Needs reply</span><span class="due">due today</span><span class="why">· why: awaiting your accept</span></div></div></div>
+        <div class="ibx"><span class="src zendesk">zendesk</span><div class="body"><div class="from">Ticket #4521 · Acme Corp</div><div class="txt">Customer calendar sync fails after password change — assigned to you.</div><div class="meta"><span class="chip finish">To finish</span><span class="due">due today</span><span class="why">· why: ticket assigned to you</span></div></div></div>
+        <div class="ibx"><span class="src sheets">sheets</span><div class="body"><div class="from">Q3 planning sheet</div><div class="txt">Your OKR row is still empty — team deadline is tomorrow.</div><div class="meta"><span class="chip finish">To finish</span><span class="due">due tomorrow</span><span class="why">· why: task verb + deadline</span></div></div></div>
+        <div class="ibx"><span class="src gmail">gmail</span><div class="body"><div class="from">HR · People Ops</div><div class="txt">Annual self-review form — submit by June 20.</div><div class="meta"><span class="chip finish">To finish</span><span class="due">due Jun 20</span><span class="why">· why: "submit" + date</span></div></div></div>
+        <div class="ibx"><span class="src gmail">gmail</span><div class="body"><div class="from">Comms</div><div class="txt">Office closed Monday for the public holiday. No action needed.</div><div class="meta"><span class="chip fyi">FYI</span><span class="why">· why: "no action needed"</span></div></div></div>
+      </div>
+    </div>
+    <p style="margin-top:14px;font-size:12px;color:var(--mut)">Every item shows <b style="color:var(--ink2)">why</b> it was sorted — the rules are transparent, so you always trust the inbox.</p>
+  </div></section>
+
+  <!-- SCHEDULE -->
+  <section id="schedule"><div class="wrap">
+    <div class="eyebrow">Page 2 · Schedule</div>
+    <h2 style="font-size:28px;margin-bottom:8px">When is the team actually online?</h2>
+    <p class="lead">Every row is on <b>your</b> clock. See working hours, busy blocks and the live "now" line across all timezones — find overlap without the mental math.</p>
+
+    <div class="glass gantt">
+      <div class="axis" id="axis"></div>
+      <div id="rows"></div>
+      <div class="glegend">
+        <span><span class="sw" style="background:rgba(109,139,255,.4)"></span> Working hours</span>
+        <span><span class="sw" style="background:var(--finish)"></span> Busy</span>
+        <span><span class="sw" style="background:rgba(255,255,255,.04)"></span> Night for them</span>
+        <span><span class="sw" style="background:var(--reply);width:3px"></span> Now</span>
+      </div>
+      <div class="freenote">⏶ No single window works for <b>all 5</b> today (New York wakes as Asia signs off). You, Mei, Arjun &amp; Sarah overlap <b>15:00–16:00</b>. For a slot that fits everyone, the <b>Week view</b> below ranks better days. →</div>
+    </div>
+  </div></section>
+
+  <!-- WEEK -->
+  <section id="week"><div class="wrap">
+    <div class="eyebrow">Page 3 · Week</div>
+    <h2 style="font-size:28px;margin-bottom:8px">Best times across the whole week</h2>
+    <p class="lead">Can't fit everyone today? The heatmap shows how many teammates are free each hour — brighter means more people available. Pick a winning slot at a glance.</p>
+
+    <div class="glass heatwrap">
+      <div class="heat" id="heat"></div>
+      <div class="best">
+        <div class="lbl">BEST SLOTS THIS WEEK</div>
+        <div class="b"><span class="rank">1</span><span class="when">Wed 14:00–15:00</span><span class="who">all 5 free</span></div>
+        <div class="b"><span class="rank">2</span><span class="when">Tue 13:00–14:00</span><span class="who">4 of 5 free</span></div>
+        <div class="b"><span class="rank">3</span><span class="when">Thu 09:00–10:00</span><span class="who">4 of 5 free</span></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- SUMMARY -->
+  <section id="summary"><div class="wrap">
+    <div class="eyebrow">Rules now · AI later</div>
+    <h2 style="font-size:28px;margin-bottom:8px">This demo = the rules engine. AI is an optional upgrade.</h2>
+    <p class="lead">Everything you just saw runs on a transparent rules engine — no AI, nothing sent to any external service, works at zero cost. AI is a layer we can switch on later for richer help. (See the separate <b>AI demo</b> file for that.)</p>
+
+    <table class="cmp">
+      <tr><th>Capability</th><th>Rules (this demo)</th><th>+ AI (upgrade)</th></tr>
+      <tr><td>Sort items: FYI / reply / finish</td><td class="yes">✓ Yes</td><td class="yes">✓ Yes (+ nuance)</td></tr>
+      <tr><td>Detect due dates from text</td><td class="yes">✓ Yes</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Track until done · snooze</td><td class="yes">✓ Yes</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Natural-language morning brief</td><td class="no">basic template</td><td class="yes">✓ Written for you</td></tr>
+      <tr><td>One-click suggested replies</td><td class="no">—</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>TL;DR of long threads</td><td class="no">—</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Priority ranking with reasoning</td><td class="no">—</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Urgency / sentiment detection</td><td class="no">—</td><td class="yes">✓ Yes</td></tr>
+      <tr><td>Data sent to an AI service</td><td class="yes">None</td><td class="no">Only if enabled (paid/private)</td></tr>
+    </table>
+
+    <div class="callout">
+      <h3>Why start with rules</h3>
+      <p>Rules are <b>private</b> (no data leaves the company), <b>instant</b>, <b>free</b>, and <b>transparent</b> (you see why every item was sorted). We pilot with rules, prove the value, then turn on AI where it clearly helps — using a paid/private model so company data stays protected.</p>
+    </div>
+
+    <div class="footer">Ocelli — the extra eyes on your work. · Preview with sample data · Rules mode</div>
+  </div></section>
+
+<script>
+  /* ── Schedule (Gantt) — positions precomputed on the viewer's Taipei clock ── */
+  const pct = h => (h/24*100)+"%";
+  const PEOPLE = [
+    {i:"AC",name:"Alex Chen (you)",tz:"Taipei · 11:00",work:[9,18],busy:[[9.5,10.5,"Standup"],[14,15,"Focus"]]},
+    {i:"ML",name:"Mei Lin",tz:"Singapore · 11:00",work:[9,18],busy:[[10,11.5,"Customer call"],[17.25,17.75,"Coffee"]]},
+    {i:"AR",name:"Arjun Rao",tz:"Bangalore · 08:30",work:[12.5,21.5],busy:[[15,15.75,"Lunch"],[18.5,19.5,"Review"]]},
+    {i:"SC",name:"Sarah Chen",tz:"London · 03:00",work:[15,23],busy:[[15,15.75,"Inbox"],[21,22,"1:1"]]},
+    {i:"LP",name:"Lisa Park",tz:"New York · 22:00",work:[21,24],busy:[[21,21.75,"Exec sync"]]},
+  ];
+  const NOW = 11; // 11:00 Taipei
+  const axis = document.getElementById("axis");
+  [0,3,6,9,12,15,18,21].forEach(h=>{const s=document.createElement("span");s.style.left=pct(h);s.textContent=String(h).padStart(2,"0")+":00";axis.appendChild(s);});
+  const rows = document.getElementById("rows");
+  PEOPLE.forEach(p=>{
+    const row=document.createElement("div");row.className="grow";
+    row.innerHTML=`<div class="gperson"><div class="gav">${p.i}</div><div class="gmeta"><div class="gname">${p.name}</div><div class="gtz">${p.tz}</div></div></div>`;
+    const track=document.createElement("div");track.className="gtrack";
+    const w=document.createElement("div");w.className="gwork";w.style.left=pct(p.work[0]);w.style.width=pct(p.work[1]-p.work[0]);track.appendChild(w);
+    p.busy.forEach(b=>{const d=document.createElement("div");d.className="gbusy";d.style.left=pct(b[0]);d.style.width=pct(b[1]-b[0]);d.textContent=b[2];track.appendChild(d);});
+    const n=document.createElement("div");n.className="gnow";n.style.left=pct(NOW);track.appendChild(n);
+    row.appendChild(track);rows.appendChild(row);
+  });
+
+  /* ── Week heatmap ── */
+  const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],hrs=[8,9,10,11,12,13,14,15,16,17,18];
+  const colors=["#161d33","#26345f","#3a55a8","#5b7df0","#8ca8ff"];
+  const heat=document.getElementById("heat");
+  heat.appendChild(Object.assign(document.createElement("div"),{className:"hh"}));
+  days.forEach(d=>heat.appendChild(Object.assign(document.createElement("div"),{className:"hh",textContent:d})));
+  hrs.forEach(h=>{
+    heat.appendChild(Object.assign(document.createElement("div"),{className:"hr",textContent:h+":00"}));
+    days.forEach((d,di)=>{let base=5-Math.abs(h-13)*0.5;if(di>4)base-=3;if(h<9||h>17)base-=1.5;
+      const free=Math.max(0,Math.min(5,Math.round(base+((h*7+di)%3)-1)));
+      const c=document.createElement("div");c.className="cell";c.style.background=colors[Math.max(0,free-1)]||"#10152a";
+      if(free>=5)c.style.boxShadow="0 0 8px rgba(140,168,255,.5)";c.title=`${d} ${h}:00 — ${free} of 5 free`;heat.appendChild(c);});
+  });
+
+  /* tab toggle (visual) */
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");});
+</script>
+</body>
+</html>
