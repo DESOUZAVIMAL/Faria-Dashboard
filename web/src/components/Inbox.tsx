@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Clock, RotateCcw, Plus, RefreshCw, ExternalLink, Mail } from "lucide-react";
+import { Check, Clock, RotateCcw, Plus, RefreshCw, ExternalLink, Mail, AlertTriangle } from "lucide-react";
 import { useMe, useItems, useItemStatus, useAddItem, useSyncGmail } from "@/lib/queries";
 import { ago, dueLabel } from "@/lib/datetime";
 import { Panel } from "./Panel";
@@ -74,6 +74,8 @@ export function Inbox() {
   };
 
   const gmail = syncGmail.data;
+  const gmailErr = syncGmail.isError ? String((syncGmail.error as Error)?.message || "Gmail sync failed") : null;
+  const enableUrl = gmailErr ? gmailErr.match(/https?:\/\/[^\s]+/)?.[0] : undefined;
 
   return (
     <Panel title="Inbox — everything that needs you" count={counts.all} delay={0.08}>
@@ -86,7 +88,8 @@ export function Inbox() {
         >
           <RefreshCw className={`h-3.5 w-3.5 ${syncGmail.isPending ? "animate-spin" : ""}`} /> Sync Gmail
         </button>
-        {gmail && !gmail.reconnect && gmail.added !== undefined && (
+        {syncGmail.isPending && <span className="text-[11.5px] text-muted-foreground">syncing…</span>}
+        {!syncGmail.isPending && gmail && !gmail.reconnect && gmail.added !== undefined && (
           <span className="text-[11.5px] text-muted-foreground">
             {gmail.added > 0 ? `+${gmail.added} new from Gmail` : "up to date"}
           </span>
@@ -95,11 +98,26 @@ export function Inbox() {
 
       {gmail?.reconnect && (
         <div className="mb-3 flex items-center gap-3 rounded-xl border border-reply/30 bg-reply/[0.08] px-3.5 py-2.5 text-[12.5px]">
-          <Mail className="h-4 w-4 text-reply" />
-          <span className="flex-1 text-ink2">Connect Gmail to pull your mail into the inbox.</span>
+          <Mail className="h-4 w-4 shrink-0 text-reply" />
+          <span className="flex-1 text-muted-foreground">Connect Gmail to pull your mail into the inbox.</span>
           <a href="/auth/google" className="rounded-lg bg-reply/20 px-3 py-1.5 text-[11.5px] font-semibold text-reply hover:bg-reply/30">
             Connect Gmail
           </a>
+        </div>
+      )}
+
+      {gmailErr && (
+        <div className="mb-3 flex items-start gap-3 rounded-xl border border-finish/30 bg-finish/[0.08] px-3.5 py-2.5 text-[12.5px]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-finish" />
+          <div className="flex-1">
+            <div className="font-semibold text-finish">Gmail sync failed</div>
+            <div className="mt-0.5 text-muted-foreground">{gmailErr}</div>
+            {enableUrl && (
+              <a href={enableUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block rounded-lg bg-finish/20 px-3 py-1.5 text-[11.5px] font-semibold text-finish hover:bg-finish/30">
+                Open Google Cloud → Enable Gmail API
+              </a>
+            )}
+          </div>
         </div>
       )}
 
