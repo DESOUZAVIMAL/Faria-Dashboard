@@ -90,6 +90,9 @@ export const api = {
   agenda: (q: DayQuery) => http<Agenda>("/api/agenda?" + qs({ date: q.date, start: q.start, end: q.end })),
   brief: (q: DayQuery) => http<Brief>("/api/brief?" + qs({ date: q.date, start: q.start, end: q.end })),
 
+  gmailSync: () => http<{ added?: number; scanned?: number; reconnect?: boolean }>(
+    "/api/gmail/sync", { method: "POST" }),
+
   team: () => http<Teammate[]>("/api/team"),
   availability: (start: string, end: string) =>
     http<Availability[]>("/api/availability?" + qs({ start, end })),

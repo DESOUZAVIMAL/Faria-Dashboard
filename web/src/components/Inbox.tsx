@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Clock, RotateCcw, Plus } from "lucide-react";
-import { useMe, useItems, useItemStatus, useAddItem } from "@/lib/queries";
+import { Check, Clock, RotateCcw, Plus, RefreshCw, ExternalLink, Mail } from "lucide-react";
+import { useMe, useItems, useItemStatus, useAddItem, useSyncGmail } from "@/lib/queries";
 import { ago, dueLabel } from "@/lib/datetime";
 import { Panel } from "./Panel";
 import type { Item, Category } from "@/lib/api";
@@ -23,14 +23,25 @@ const CHIP_STYLE: Record<Category, string> = {
 
 type Filter = "all" | Category | "done";
 
+// run the first Gmail auto-sync once per app session, not on every mount
+let didAutoSync = false;
+
 export function Inbox() {
   const { data: me } = useMe();
   const tz = me?.tz || "UTC";
   const { data: items = [], isLoading } = useItems();
   const setStatus = useItemStatus();
   const addItem = useAddItem();
+  const syncGmail = useSyncGmail();
   const [filter, setFilter] = useState<Filter>("all");
   const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (!didAutoSync) {
+      didAutoSync = true;
+      syncGmail.mutate();
+    }
+  }, [syncGmail]);
 
   const active = items.filter((i) => i.status !== "done");
   const counts = {
@@ -62,8 +73,36 @@ export function Inbox() {
     setText("");
   };
 
+  const gmail = syncGmail.data;
+
   return (
     <Panel title="Inbox — everything that needs you" count={counts.all} delay={0.08}>
+      {/* Gmail sync row */}
+      <div className="mb-3 flex items-center gap-2">
+        <button
+          onClick={() => syncGmail.mutate()}
+          disabled={syncGmail.isPending}
+          className="flex items-center gap-1.5 rounded-full border border-border bg-white/[0.03] px-3 py-1.5 text-[12px] font-semibold text-muted-foreground transition hover:bg-white/[0.07] hover:text-white"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${syncGmail.isPending ? "animate-spin" : ""}`} /> Sync Gmail
+        </button>
+        {gmail && !gmail.reconnect && gmail.added !== undefined && (
+          <span className="text-[11.5px] text-muted-foreground">
+            {gmail.added > 0 ? `+${gmail.added} new from Gmail` : "up to date"}
+          </span>
+        )}
+      </div>
+
+      {gmail?.reconnect && (
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-reply/30 bg-reply/[0.08] px-3.5 py-2.5 text-[12.5px]">
+          <Mail className="h-4 w-4 text-reply" />
+          <span className="flex-1 text-ink2">Connect Gmail to pull your mail into the inbox.</span>
+          <a href="/auth/google" className="rounded-lg bg-reply/20 px-3 py-1.5 text-[11.5px] font-semibold text-reply hover:bg-reply/30">
+            Connect Gmail
+          </a>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
@@ -126,7 +165,14 @@ function ItemRow({ item, tz, onStatus }: { item: Item; tz: string; onStatus: (a:
         {item.src}
       </span>
       <div className="flex-1">
-        <div className="font-bold">{item.from || "(no sender)"}</div>
+        <div className="flex items-center gap-2 font-bold">
+          {item.from || "(no sender)"}
+          {item.link && (
+            <a href={item.link} target="_blank" rel="noreferrer" className="text-muted-foreground transition hover:text-primary" title="Open">
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+        </div>
         <div className="mt-[3px] text-muted-foreground">{item.text}</div>
         <div className="mt-[9px] flex flex-wrap items-center gap-[11px]">
           <span className={`rounded-full px-2.5 py-[3px] text-[10px] font-bold ${CHIP_STYLE[item.cat]}`}>{CAT_LABEL[item.cat]}</span>

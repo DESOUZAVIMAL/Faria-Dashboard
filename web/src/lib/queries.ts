@@ -88,6 +88,17 @@ export function useUpdateTask() {
   });
 }
 
+export function useSyncGmail() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.gmailSync(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["items"] });
+      qc.invalidateQueries({ queryKey: ["brief"] });
+    },
+  });
+}
+
 export function useScheduleTask() {
   const qc = useQueryClient();
   return useMutation({

@@ -84,6 +84,7 @@ const SCOPES = [
   "profile",
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/gmail.readonly",
 ];
 
 /* ── tiny JSON-file database ── */
@@ -797,5 +798,79 @@ if (cron) {
     if (open.length) slackNotify(`⏰ *Open action items (${open.length}):*\n${open.slice(0, 15).join("\n")}`);
   });
 }
+
+/* ════════════════════════════════════════════════════════════════════
+ *  GMAIL CONNECTOR — pull relevant inbox mail, filter out noise, classify
+ *  with the rules engine, and store as work items. Deduped by message id.
+ *  Requires the gmail.readonly scope (users re-consent once after upgrade).
+ * ════════════════════════════════════════════════════════════════════ */
+function parseFrom(raw) {
+  const m = String(raw).match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>/);
+  if (m) return (m[1].trim() || m[2]).slice(0, 120);
+  return String(raw).slice(0, 120);
+}
+
+async function syncGmail(user) {
+  const db = loadDB();
+  const gmail = google.gmail({ version: "v1", auth: authedClientFor(user) });
+  // Server-side filter: recent inbox mail, minus the obvious noise buckets.
+  const q = "in:inbox newer_than:7d -category:promotions -category:social -category:forums";
+  let list;
+  try {
+    list = await gmail.users.messages.list({ userId: "me", q, maxResults: 25 });
+  } catch (e) {
+    if (/insufficient|scope|permission|forbidden|invalid_grant|unauthorized/i.test(e.message)) {
+      return { reconnect: true };
+    }
+    throw e;
+  }
+  const msgs = list.data.messages || [];
+  const existing = new Set(
+    db.items.filter((i) => i.user === user.email && typeof i.id === "string" && i.id.startsWith("gmail-")).map((i) => i.id)
+  );
+  let added = 0;
+  for (const m of msgs) {
+    const id = `gmail-${m.id}`;
+    if (existing.has(id)) continue;
+    let full;
+    try {
+      full = await gmail.users.messages.get({
+        userId: "me", id: m.id, format: "metadata", metadataHeaders: ["From", "Subject"],
+      });
+    } catch { continue; }
+    const headers = {};
+    (full.data.payload?.headers || []).forEach((h) => (headers[h.name.toLowerCase()] = h.value));
+    const from = parseFrom(headers["from"] || "");
+    const subject = headers["subject"] || "(no subject)";
+    const snippet = (full.data.snippet || "").replace(/&#39;/g, "'").replace(/&amp;/g, "&").slice(0, 280);
+    const labels = full.data.labelIds || [];
+    const text = `${subject} — ${snippet}`;
+    let { cat, due, reasons } = classifyItem({ src: "gmail", from, text });
+    // automated "Updates" mail that only matched the safe default → keep as FYI
+    if (labels.includes("CATEGORY_UPDATES") && !labels.includes("IMPORTANT") &&
+        cat === "reply" && reasons[0] === "default-needs-look") {
+      cat = "fyi"; reasons = ["gmail-updates"];
+    }
+    db.items.push({
+      id, user: user.email, src: "gmail", from, text: text.slice(0, 500),
+      link: `https://mail.google.com/mail/u/0/#inbox/${m.id}`,
+      cat, due, reasons, status: "open", createdAt: new Date().toISOString(),
+    });
+    existing.add(id);
+    added++;
+  }
+  saveDB(db);
+  return { added, scanned: msgs.length };
+}
+
+app.post("/api/gmail/sync", requireAuth, async (req, res) => {
+  if (!req.user.refresh_token) return res.json({ reconnect: true });
+  try {
+    res.json(await syncGmail(req.user));
+  } catch (e) {
+    console.warn("gmail sync failed:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.listen(PORT, () => console.log(`Ocelli running at ${BASE_URL}`));
