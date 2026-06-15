@@ -1,4 +1,4 @@
-/* TimeSync — deterministic triage rules engine (no AI required).
+/* Ocelli — deterministic triage rules engine (no AI required).
  *
  * classifyItem(item) sorts an incoming work item into one of three buckets:
  *   "fyi"    — information only, read & dismiss
@@ -136,8 +136,8 @@ if (require.main === module && process.argv.includes("--test")) {
 
   // hard source rules
   assert.equal(c({ src: "zendesk", text: "Customer sync fails" }).cat, "finish");
-  assert.equal(c({ src: "timesync", text: "needs your Accept", meta: { awaitingAccept: true } }).cat, "reply");
-  assert.equal(c({ src: "timesync", text: "schedule usability test", meta: { actionItem: true } }).cat, "finish");
+  assert.equal(c({ src: "ocelli", text: "needs your Accept", meta: { awaitingAccept: true } }).cat, "reply");
+  assert.equal(c({ src: "ocelli", text: "schedule usability test", meta: { actionItem: true } }).cat, "finish");
   // noise
   assert.equal(c({ src: "gmail", from: "no-reply@corp.com", text: "All-hands moved to Friday" }).cat, "fyi");
   assert.equal(c({ src: "gmail", from: "Comms", text: "Office closed Monday. No action needed." }).cat, "fyi");

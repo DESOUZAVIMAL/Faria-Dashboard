@@ -1,4 +1,4 @@
-/* TimeSync frontend */
+/* Ocelli frontend */
 (() => {
   const $ = (sel, el = document) => el.querySelector(sel);
   const app = $("#app");
@@ -133,7 +133,7 @@
     <div class="app"><div class="wrap">
       <div class="topbar">
         <div class="brand">
-          <h1>TimeSync</h1>
+          <h1>Ocelli</h1>
           <p>Every row is on <b>your clock</b> (${esc(VIEWER_TZ)}). Dark shading = night for that person.</p>
         </div>
         <div class="userchip">
@@ -353,7 +353,7 @@
 
   function renderSignin() {
     app.innerHTML = `<div class="signin">
-      <div class="logo">TimeSync</div>
+      <div class="logo">Ocelli</div>
       <p class="tagline">See your whole team's availability on your clock.<br>Find the overlap and book in one click.</p>
       <a class="signin-btn" href="/auth/google">
         <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">

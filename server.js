@@ -1,4 +1,4 @@
-/* TimeSync — timezone-aware team availability dashboard
+/* Ocelli — timezone-aware team availability dashboard
  * Backend: Google OAuth2 sign-in, FreeBusy queries for every team member,
  * meeting requests with pending/confirmed states, and automatic Google
  * Calendar event creation (with Meet link) when a request is accepted.
@@ -305,7 +305,7 @@ app.post("/api/requests", requireAuth, (req, res) => {
   saveDB(db);
   const when = new Intl.DateTimeFormat("en-GB", { timeZone: req.user.tz, dateStyle: "medium", timeStyle: "short" })
     .format(new Date(reqObj.start));
-  slackNotify(`🗓️ *${req.user.name}* requested *${reqObj.title}* with ${reqObj.attendees.join(", ")} — ${when} (${req.user.tz}). Awaiting acceptance in TimeSync.`);
+  slackNotify(`🗓️ *${req.user.name}* requested *${reqObj.title}* with ${reqObj.attendees.join(", ")} — ${when} (${req.user.tz}). Awaiting acceptance in Ocelli.`);
   res.json(reqObj);
 });
 
@@ -322,7 +322,7 @@ app.post("/api/requests/:id/respond", requireAuth, async (req, res) => {
 
   if (action === "decline") {
     r.status = "declined";
-    slackNotify(`✖️ ${req.user.name} declined *${r.title}* — pick a new slot in TimeSync.`);
+    slackNotify(`✖️ ${req.user.name} declined *${r.title}* — pick a new slot in Ocelli.`);
   } else {
     const everyoneAccepted = r.attendees.every((a) => r.responses[a] === "accept");
     if (everyoneAccepted) {
@@ -344,7 +344,7 @@ app.post("/api/requests/:id/respond", requireAuth, async (req, res) => {
               conferenceData: {
                 createRequest: { requestId: r.id, conferenceSolutionKey: { type: "hangoutsMeet" } },
               },
-              description: "Scheduled via TimeSync",
+              description: "Scheduled via Ocelli",
             },
           });
           r.eventLink = ev.data.htmlLink || null;
@@ -485,13 +485,13 @@ function localHourToInstant(tz, dateStr, hour) {
 
 const firstName = (u) => (u.name || u.email).split(" ")[0].toLowerCase();
 
-/* synthesize items from TimeSync's own state (requests + action items) */
+/* synthesize items from Ocelli's own state (requests + action items) */
 function synthesizeItems(db, user) {
   const out = [];
   for (const r of db.requests) {
     if (r.status === "pending" && r.attendees.includes(user.email) && r.responses[user.email] !== "accept") {
       out.push({
-        id: `req-${r.id}`, src: "timesync", from: r.requesterName,
+        id: `req-${r.id}`, src: "ocelli", from: r.requesterName,
         text: `"${r.title}" is waiting for your Accept.`,
         cat: "reply", due: r.start.slice(0, 10), reasons: ["awaiting-accept"],
         link: "/", createdAt: r.createdAt,
@@ -504,7 +504,7 @@ function synthesizeItems(db, user) {
           : r.requester === user.email; // unowned items fall to the requester
         if (!a.done && mine) {
           out.push({
-            id: `act-${r.id}-${i}`, src: "timesync", from: `Action item · ${r.title}`,
+            id: `act-${r.id}-${i}`, src: "ocelli", from: `Action item · ${r.title}`,
             text: a.text, cat: "finish", due: null, reasons: ["action-item"],
             link: "/", createdAt: r.createdAt,
           });
@@ -650,7 +650,7 @@ app.post("/api/tasks/:id/schedule", requireAuth, async (req, res) => {
       requestBody: {
         summary: `⏱ ${t.text}`,
         start: { dateTime: start }, end: { dateTime: end },
-        description: "Scheduled via TimeSync",
+        description: "Scheduled via Ocelli",
       },
     });
     t.scheduled = { start, end, eventLink: ev.data.htmlLink || null };
@@ -662,7 +662,7 @@ app.post("/api/tasks/:id/schedule", requireAuth, async (req, res) => {
   res.json(t);
 });
 
-/* ── agenda: YOUR OWN calendar events + TimeSync meetings + free gaps ──
+/* ── agenda: YOUR OWN calendar events + Ocelli meetings + free gaps ──
  * Privacy note: full event titles are read only for the signed-in user's
  * own calendar; teammates remain FreeBusy-only. */
 async function buildAgenda(user, dateStr, startISO, endISO) {
@@ -779,7 +779,7 @@ if (cron) {
       (r) => r.status === "confirmed" && Date.parse(r.start) > Date.now() && Date.parse(r.start) < weekAhead
     );
     const lines = users.map((u) => `• ${u.name} — ${u.tz}, working ${u.workStart}:00–${u.workEnd}:00 local`);
-    const base = `🌍 *Weekly TimeSync digest*\nTeam clocks this week:\n${lines.join("\n")}\n\nConfirmed meetings in the next 7 days: ${upcoming.length}\nFind overlap & schedule: ${BASE_URL}`;
+    const base = `🌍 *Weekly Ocelli digest*\nTeam clocks this week:\n${lines.join("\n")}\n\nConfirmed meetings in the next 7 days: ${upcoming.length}\nFind overlap & schedule: ${BASE_URL}`;
     const ai = await aiComplete(`Rewrite this Slack message to be friendly and brief. Keep every fact and the URL. Plain text with the same bullet structure:\n\n${base}`, 400);
     slackNotify(ai || base);
   });
@@ -794,4 +794,4 @@ if (cron) {
   });
 }
 
-app.listen(PORT, () => console.log(`TimeSync running at ${BASE_URL}`));
+app.listen(PORT, () => console.log(`Ocelli running at ${BASE_URL}`));

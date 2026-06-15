@@ -1,4 +1,9 @@
-# TimeSync — Complete Project Brief & Handoff Document
+# Ocelli — Complete Project Brief & Handoff Document
+
+> **Ocelli** *(plural of "ocellus", the simple extra eyes insects use to sense light and motion)* —
+> **the extra eyes on your work. Nothing slips.** A unified work dashboard that watches all your
+> tools and surfaces what needs you.
+> *(Formerly "TimeSync" — the original timezone-scheduling name; renamed Jun 2026 to fit the broader product.)*
 
 > **Living document.** Update this whenever a major decision changes.
 > This is the single source of truth for any AI assistant, new contributor, or future session picking up this project.
@@ -27,7 +32,7 @@ Professionals use 5–10 tools daily: Slack, Gmail, Zendesk, Google Sheets, Goog
 **There is no single place that aggregates what needs YOUR action and tracks it until done.**
 
 ### The Solution
-TimeSync is a **unified work dashboard for professionals** — one screen that:
+Ocelli is a **unified work dashboard for professionals** — one screen that:
 1. **Ingests** from all tools (Gmail, Slack, Zendesk, Sheets, Calendar)
 2. **Triages** every item into: 🔴 To finish / 🟠 Needs reply / 🔵 FYI
 3. **Tracks** each item until marked done — nothing slips
@@ -162,7 +167,7 @@ Output: { cat: "fyi" | "reply" | "finish",  due: "YYYY-MM-DD" | null,  reasons: 
 | # | Condition | Result | Example |
 |---|---|---|---|
 | 1 | `src === "zendesk"` OR `meta.assignedTicket` | finish | Zendesk ticket assigned to you |
-| 2 | `meta.awaitingAccept` | reply | Pending meeting request from TimeSync |
+| 2 | `meta.awaitingAccept` | reply | Pending meeting request from Ocelli |
 | 3 | `meta.actionItem` | finish | Action item extracted from meeting notes |
 | 4 | No-reply sender OR newsletter/announcement text | fyi | All-hands email, company digest |
 | 5 | Do-verb + deadline | finish | "Fill your OKR row by tomorrow" |
@@ -205,7 +210,7 @@ POST /api/ingest?token=YOUR_INGEST_TOKEN
 ### 3.5 Agenda & Calendar
 - `GET /api/agenda?date=YYYY-MM-DD` → `{ events, gaps }`
   - Reads own Google Calendar via `events.list`
-  - Merges TimeSync meeting requests
+  - Merges Ocelli meeting requests
   - Computes free gaps (min 15 min) within working hours (default 9am–6pm)
 
 ### 3.6 Task Scheduling
@@ -253,7 +258,7 @@ POST /api/ingest?token=YOUR_INGEST_TOKEN
 - **Filter at the connector level**: only items relevant to YOU leave the source system — AI never sees irrelevant noise
 
 ### 4.2 Connector Filter Strategy
-| Source | Pre-filter before pushing to TimeSync |
+| Source | Pre-filter before pushing to Ocelli |
 |---|---|
 | **Gmail** | `to:me` only (not BCC), skip `from:no-reply*`, skip promotions/newsletters label |
 | **Slack** | `message.im` (DMs) + `app_mention` events + specific whitelisted channel IDs |
@@ -498,6 +503,7 @@ The migration path is clean: **`/api/ingest` and `rules.js` never change** — o
 | Jun 2026 | New React app lives in `web/`; legacy `public/` kept | Non-destructive — old app keeps working until the React rebuild reaches parity |
 | Jun 2026 | Charts: Recharts only (visx/D3 deferred) | Recharts easier + smaller bundle; heatmap built with plain CSS grid (no lib needed) |
 | Jun 2026 | Claude Code (not Claude.ai) is the working home | Context + memory live here; `PROJECT_BRIEF.md` is the portable handoff if Claude.ai is ever needed |
+| Jun 2026 | **Renamed product "TimeSync" → "Ocelli"** | Old name described only the timezone tool. "Ocelli" (insect's extra light-sensing eyes) = "extra eyes on your work, nothing slips" — fits the dashboard. Tagline: *the extra eyes on your work*. GitHub repo still named `Faria-Dashboard` (rename in repo Settings if desired). Internal backend identifier `src:"timesync"` left as-is in `server.js`/`rules.js`; web app uses `src:"ocelli"` |
 
 ---
 

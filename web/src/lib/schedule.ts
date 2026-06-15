@@ -1,4 +1,4 @@
-/* TimeSync — scheduling (timezone Gantt) data + helpers.
+/* Ocelli — scheduling (timezone Gantt) data + helpers.
  *
  * Every row is rendered on the VIEWER's clock. We use Luxon to convert each
  * person's local working hours / busy blocks into the viewer timezone, then

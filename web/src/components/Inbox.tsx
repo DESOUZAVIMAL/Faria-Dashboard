@@ -9,7 +9,7 @@ const SRC_STYLE: Record<Source, string> = {
   gmail: "bg-gradient-to-br from-[#f87171] to-[#ea4335]",
   zendesk: "bg-gradient-to-br from-[#0ea5a3] to-[#03363d]",
   sheets: "bg-gradient-to-br from-[#34d399] to-[#0f9d58]",
-  timesync: "bg-gradient-to-br from-primary to-accent2",
+  ocelli: "bg-gradient-to-br from-primary to-accent2",
 };
 
 const CHIP_STYLE: Record<Category, string> = {

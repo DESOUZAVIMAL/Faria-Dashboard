@@ -1,6 +1,10 @@
-# TimeSync
+# Ocelli
 
-A multifunctional remote-work hub for distributed teams, built around one idea: **see everyone's day on your own clock, find the overlap, book it in one click — and let the app remember what happened in every meeting.**
+*The extra eyes on your work. Nothing slips.*
+
+A unified work dashboard for professionals: it watches all your tools (Slack, Gmail, Zendesk, Sheets, Calendar), triages everything into 🔵 FYI / 🟠 Needs reply / 🔴 To finish, and tracks each item until done. It also shows your day, your team's timezone overlap, and the best times to meet.
+
+> Formerly **TimeSync** (a timezone-scheduling tool); renamed as the product grew into a full work dashboard. See [PROJECT_BRIEF.md](PROJECT_BRIEF.md) for full context.
 
 ## What it does
 
@@ -26,7 +30,7 @@ A multifunctional remote-work hub for distributed teams, built around one idea: 
 
 ```
 Google Calendar ──(FreeBusy / Events API)──┐
-Gemini / Claude ──(summaries & briefs)─────┼──► TimeSync server ──► browser UI
+Gemini / Claude ──(summaries & briefs)─────┼──► Ocelli server ──► browser UI
 Slack ◄──(incoming webhook notifications)──┘        (Node.js)
 ```
 
@@ -62,4 +66,4 @@ Your laptop is only for development. For real use, the app must run on an always
 
 ## v2 ideas
 
-Best-time-this-week auto-suggester ranked by "humane hours" for every attendee, public-holiday awareness per country, Slack slash-command (`/timesync @sarah 60`), per-person meeting-load analytics (late-night fairness score), focus-time protection blocks.
+Best-time-this-week auto-suggester ranked by "humane hours" for every attendee, public-holiday awareness per country, Slack slash-command (`/ocelli @sarah 60`), per-person meeting-load analytics (late-night fairness score), focus-time protection blocks.

@@ -1,4 +1,4 @@
-/* TimeSync — shared types + mock data.
+/* Ocelli — shared types + mock data.
  *
  * This mock layer mirrors what the real API (server.js) returns, so swapping
  * to live data later means replacing these constants with TanStack Query
@@ -6,7 +6,7 @@
  */
 
 export type Category = "reply" | "finish" | "fyi";
-export type Source = "slack" | "gmail" | "zendesk" | "sheets" | "timesync";
+export type Source = "slack" | "gmail" | "zendesk" | "sheets" | "ocelli";
 
 export interface InboxItem {
   id: string;
@@ -66,7 +66,7 @@ export const TASKS: Task[] = [
 
 export const INBOX: InboxItem[] = [
   { id: "i1", src: "slack", from: "Lisa Park (DM)", text: "Can you review the Q3 budget doc before Thursday? I need your numbers for the exec deck.", cat: "reply", due: "due Thu", ago: "2 h ago", actionLabel: "Replied" },
-  { id: "i2", src: "timesync", from: "Sarah Chen", text: "Q3 roadmap (16:00–17:00 today) is waiting for your Accept.", cat: "reply", due: "due today", ago: "3 h ago", actionLabel: "Accept" },
+  { id: "i2", src: "ocelli", from: "Sarah Chen", text: "Q3 roadmap (16:00–17:00 today) is waiting for your Accept.", cat: "reply", due: "due today", ago: "3 h ago", actionLabel: "Accept" },
   { id: "i3", src: "zendesk", from: "Ticket #4521 · Acme Corp", text: "Customer calendar sync fails after password change — assigned to you.", cat: "finish", due: "due today", ago: "1 h ago", actionLabel: "Done" },
   { id: "i4", src: "sheets", from: "Q3 planning sheet", text: "Your OKR row is still empty — team deadline is tomorrow.", cat: "finish", due: "due tomorrow", ago: "1 d ago", actionLabel: "Done" },
   { id: "i5", src: "gmail", from: "HR · People Ops", text: "Annual self-review form — submit by June 20.", cat: "finish", due: "due Jun 20", ago: "4 h ago", actionLabel: "Done" },

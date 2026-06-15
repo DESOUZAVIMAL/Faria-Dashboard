@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TimeSync — Today (dashboard demo)</title>
+  <title>Ocelli — Today (dashboard demo)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
@@ -62,7 +62,7 @@
     .src { font-size: 10px; font-weight: 700; color: #fff; border-radius: 6px; padding: 3px 7px; min-width: 58px;
       text-align: center; flex-shrink: 0; margin-top: 1px; }
     .src.slack { background: #4A154B; } .src.gmail { background: #C5221F; } .src.zendesk { background: #03363D; }
-    .src.sheets { background: #188038; } .src.timesync { background: var(--free); }
+    .src.sheets { background: #188038; } .src.ocelli { background: var(--free); }
     .ibx-main { flex: 1; min-width: 0; }
     .ibx-from { font-weight: 700; font-size: 12.5px; }
     .ibx-text { color: var(--ink-2); margin-top: 1px; }
@@ -95,7 +95,7 @@
     let INBOX = [
       { id: "i1", src: "slack",   from: "Lisa Park (DM)",          text: "Can you review the Q3 budget doc before Thursday? I need your numbers for the exec deck.",
         cat: "reply",  due: "Thu", age: "2 h" },
-      { id: "i2", src: "timesync",from: "Sarah Chen",              text: "Q3 roadmap (16:00–17:00 today) is waiting for your Accept.",
+      { id: "i2", src: "ocelli",from: "Sarah Chen",              text: "Q3 roadmap (16:00–17:00 today) is waiting for your Accept.",
         cat: "reply",  due: "today", age: "3 h" },
       { id: "i3", src: "zendesk", from: "Ticket #4521 · Acme Corp",text: "Customer calendar sync fails after password change — assigned to you.",
         cat: "finish", due: "today", age: "1 h" },
@@ -105,7 +105,7 @@
         cat: "finish", due: "Jun 20", age: "4 h" },
       { id: "i6", src: "slack",   from: "#design · Mei Lin",       text: "@vimal the new onboarding mockups are ready for your look.",
         cat: "reply",  due: null, age: "5 h" },
-      { id: "i7", src: "timesync",from: "Weekly design sync",      text: "Open action item: schedule usability test with 3 users.",
+      { id: "i7", src: "ocelli",from: "Weekly design sync",      text: "Open action item: schedule usability test with 3 users.",
         cat: "finish", due: null, age: "2 d" },
       { id: "i8", src: "gmail",   from: "Comms",                   text: "All-hands moved to Friday 14:00 — no action needed.",
         cat: "fyi",    due: null, age: "6 h" },
@@ -235,7 +235,7 @@
               </div>`).join("")}
             <div style="font-size:11px;color:var(--mut);margin-top:12px">
               💤 Snoozed items return tomorrow morning and appear in your brief. In the live app, items arrive automatically
-              from Slack (flag with ⭐), Gmail, Zendesk and TimeSync — AI sorts them into these three buckets.
+              from Slack (flag with ⭐), Gmail, Zendesk and Ocelli — AI sorts them into these three buckets.
             </div>
           </div>
         </div>

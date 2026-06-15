@@ -15,7 +15,7 @@ export function TopBar() {
         <div className="flex items-center gap-2 font-heading text-xl font-bold">
           <span className="ts-pulse inline-block h-2.5 w-2.5 rounded-full bg-cyan shadow-[0_0_12px_var(--cyan)]" />
           <span className="bg-gradient-to-r from-white to-[#9db4ff] bg-clip-text text-transparent">
-            TimeSync
+            Ocelli
           </span>
         </div>
 
