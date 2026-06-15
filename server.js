@@ -70,6 +70,10 @@ async function slackNotify(text) {
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+// Where to send the browser after a successful sign-in. In dev, set
+// APP_URL=http://localhost:5173 so OAuth lands back on the React app.
+// (Cookies are host-based on localhost, so the session is shared across ports.)
+const APP_URL = process.env.APP_URL || "/";
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "db.json");
 const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || ""; // e.g. "yourcompany.com" to restrict sign-in
@@ -169,7 +173,7 @@ app.get("/auth/callback", async (req, res) => {
 
     const session = jwt.sign({ email }, JWT_SECRET, { expiresIn: "30d" });
     res.cookie("session", session, { httpOnly: true, sameSite: "lax", maxAge: 30 * 864e5 });
-    res.redirect("/");
+    res.redirect(APP_URL);
   } catch (e) {
     console.error(e);
     res.status(500).send("Sign-in failed. Check server logs.");
@@ -763,7 +767,7 @@ app.get("/api/brief", requireAuth, async (req, res) => {
     300
   );
   if (ai) text = ai;
-  res.json({ brief: text, counts: { meetings: meetings.length, replies: replies.length, finishes: finishes.length, dueToday: dueToday.length } });
+  res.json({ brief: text, ai: !!ai, counts: { meetings: meetings.length, replies: replies.length, finishes: finishes.length, dueToday: dueToday.length } });
 });
 
 

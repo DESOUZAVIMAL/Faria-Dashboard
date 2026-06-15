@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Clock } from "lucide-react";
-import { INBOX, CAT_LABEL, type Category, type Source, type InboxItem } from "@/lib/data";
+import { Check, Clock, RotateCcw, Plus } from "lucide-react";
+import { useMe, useItems, useItemStatus, useAddItem } from "@/lib/queries";
+import { ago, dueLabel } from "@/lib/datetime";
 import { Panel } from "./Panel";
+import type { Item, Category } from "@/lib/api";
 
-const SRC_STYLE: Record<Source, string> = {
+const SRC_STYLE: Record<string, string> = {
   slack: "bg-gradient-to-br from-[#7c3aed] to-[#611f69]",
   gmail: "bg-gradient-to-br from-[#f87171] to-[#ea4335]",
   zendesk: "bg-gradient-to-br from-[#0ea5a3] to-[#03363d]",
   sheets: "bg-gradient-to-br from-[#34d399] to-[#0f9d58]",
   ocelli: "bg-gradient-to-br from-primary to-accent2",
+  manual: "bg-white/15",
 };
-
+const CAT_LABEL: Record<Category, string> = { reply: "Needs reply", finish: "To finish", fyi: "FYI" };
 const CHIP_STYLE: Record<Category, string> = {
   reply: "bg-reply/[0.14] text-reply border border-reply/30",
   finish: "bg-finish/[0.14] text-finish border border-finish/30",
@@ -20,82 +23,49 @@ const CHIP_STYLE: Record<Category, string> = {
 
 type Filter = "all" | Category | "done";
 
-const TABS: { key: Filter; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "reply", label: "🟠 Needs reply" },
-  { key: "finish", label: "🔴 To finish" },
-  { key: "fyi", label: "🔵 FYI" },
-  { key: "done", label: "✅ Done" },
-];
-
-function Item({ item, onDone }: { item: InboxItem; onDone: (id: string) => void }) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.25 }}
-      className="group flex gap-3.5 border-t border-border py-[15px] text-[13.5px] first:border-t-0"
-    >
-      <span
-        className={`h-fit rounded-lg px-2.5 py-[5px] text-[10px] font-bold tracking-wide text-white ${SRC_STYLE[item.src]}`}
-      >
-        {item.src}
-      </span>
-      <div className="flex-1">
-        <div className="font-bold">{item.from}</div>
-        <div className="mt-[3px] text-muted-foreground">{item.text}</div>
-        <div className="mt-[9px] flex items-center gap-[11px]">
-          <span className={`rounded-full px-2.5 py-[3px] text-[10px] font-bold ${CHIP_STYLE[item.cat]}`}>
-            {CAT_LABEL[item.cat]}
-          </span>
-          {item.due && <span className="text-[11px] font-semibold text-finish">{item.due}</span>}
-          <span className="text-[11px] text-muted-foreground">{item.ago}</span>
-          <span className="ml-auto flex gap-[7px]">
-            <button
-              onClick={() => onDone(item.id)}
-              className="ts-glow-free flex items-center gap-1 rounded-[10px] border-transparent bg-gradient-to-r from-free to-[#22c79a] px-3 py-[7px] text-[11.5px] font-semibold text-[#06281c]"
-            >
-              <Check className="h-3 w-3" strokeWidth={3} /> {item.actionLabel}
-            </button>
-            {item.cat !== "fyi" && (
-              <button className="flex items-center gap-1 rounded-[10px] border border-border bg-white/[0.04] px-3 py-[7px] text-[11.5px] font-semibold text-muted-foreground transition hover:bg-white/10 hover:text-white">
-                <Clock className="h-3 w-3" /> Snooze
-              </button>
-            )}
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export function Inbox() {
+  const { data: me } = useMe();
+  const tz = me?.tz || "UTC";
+  const { data: items = [], isLoading } = useItems();
+  const setStatus = useItemStatus();
+  const addItem = useAddItem();
   const [filter, setFilter] = useState<Filter>("all");
-  const [done, setDone] = useState<string[]>([]);
+  const [text, setText] = useState("");
 
-  const markDone = (id: string) => setDone((d) => [...d, id]);
-
+  const active = items.filter((i) => i.status !== "done");
   const counts = {
-    all: INBOX.filter((i) => !done.includes(i.id)).length,
-    reply: INBOX.filter((i) => i.cat === "reply" && !done.includes(i.id)).length,
-    finish: INBOX.filter((i) => i.cat === "finish" && !done.includes(i.id)).length,
-    fyi: INBOX.filter((i) => i.cat === "fyi" && !done.includes(i.id)).length,
-    done: done.length,
+    all: active.length,
+    reply: active.filter((i) => i.cat === "reply").length,
+    finish: active.filter((i) => i.cat === "finish").length,
+    fyi: active.filter((i) => i.cat === "fyi").length,
+    done: items.filter((i) => i.status === "done").length,
   };
+  const tabs: { key: Filter; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "reply", label: "🟠 Needs reply" },
+    { key: "finish", label: "🔴 To finish" },
+    { key: "fyi", label: "🔵 FYI" },
+    { key: "done", label: "✅ Done" },
+  ];
 
-  const visible = INBOX.filter((i) => {
-    if (filter === "done") return done.includes(i.id);
-    if (done.includes(i.id)) return false;
+  const visible = items.filter((i) => {
+    if (filter === "done") return i.status === "done";
+    if (i.status === "done") return false;
     if (filter === "all") return true;
     return i.cat === filter;
   });
 
+  const submit = () => {
+    const v = text.trim();
+    if (!v) return;
+    addItem.mutate(v);
+    setText("");
+  };
+
   return (
     <Panel title="Inbox — everything that needs you" count={counts.all} delay={0.08}>
       <div className="mb-4 flex flex-wrap gap-2">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setFilter(t.key)}
@@ -111,15 +81,79 @@ export function Inbox() {
         ))}
       </div>
 
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-white/[0.03] px-3 py-2">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="Add an item — it gets auto-sorted…"
+          className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+        />
+        <button onClick={submit} className="grid h-7 w-7 place-items-center rounded-lg bg-white/[0.06] text-muted-foreground transition hover:bg-white/10 hover:text-white">
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      {isLoading && <p className="py-4 text-[13px] text-muted-foreground">Loading your inbox…</p>}
+
       <AnimatePresence mode="popLayout">
         {visible.map((item) => (
-          <Item key={item.id} item={item} onDone={markDone} />
+          <ItemRow key={item.id} item={item} tz={tz} onStatus={(action) => setStatus.mutate({ id: item.id, action })} />
         ))}
       </AnimatePresence>
 
-      {visible.length === 0 && (
+      {!isLoading && visible.length === 0 && (
         <p className="py-8 text-center text-[13px] text-muted-foreground">Nothing here — you're all caught up. ✨</p>
       )}
     </Panel>
+  );
+}
+
+function ItemRow({ item, tz, onStatus }: { item: Item; tz: string; onStatus: (a: "done" | "snooze" | "reopen") => void }) {
+  const due = dueLabel(item.due, tz);
+  const isDone = item.status === "done";
+  const isSnoozed = item.status === "snoozed";
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: 40 }}
+      transition={{ duration: 0.25 }}
+      className="flex gap-3.5 border-t border-border py-[15px] text-[13.5px] first:border-t-0"
+    >
+      <span className={`h-fit rounded-lg px-2.5 py-[5px] text-[10px] font-bold tracking-wide text-white ${SRC_STYLE[item.src] || SRC_STYLE.manual}`}>
+        {item.src}
+      </span>
+      <div className="flex-1">
+        <div className="font-bold">{item.from || "(no sender)"}</div>
+        <div className="mt-[3px] text-muted-foreground">{item.text}</div>
+        <div className="mt-[9px] flex flex-wrap items-center gap-[11px]">
+          <span className={`rounded-full px-2.5 py-[3px] text-[10px] font-bold ${CHIP_STYLE[item.cat]}`}>{CAT_LABEL[item.cat]}</span>
+          {due && <span className="text-[11px] font-semibold text-finish">{due}</span>}
+          {isSnoozed && <span className="text-[11px] font-semibold text-reply">snoozed</span>}
+          <span className="text-[11px] text-muted-foreground">{ago(item.createdAt)}</span>
+          {item.reasons?.[0] && <span className="text-[10.5px] text-muted-foreground">· why: {item.reasons.join(", ")}</span>}
+          <span className="ml-auto flex gap-[7px]">
+            {isDone ? (
+              <button onClick={() => onStatus("reopen")} className="flex items-center gap-1 rounded-[10px] border border-border bg-white/[0.04] px-3 py-[7px] text-[11.5px] font-semibold text-muted-foreground transition hover:bg-white/10 hover:text-white">
+                <RotateCcw className="h-3 w-3" /> Reopen
+              </button>
+            ) : (
+              <>
+                <button onClick={() => onStatus("done")} className="ts-glow-free flex items-center gap-1 rounded-[10px] border-transparent bg-gradient-to-r from-free to-[#22c79a] px-3 py-[7px] text-[11.5px] font-semibold text-[#06281c]">
+                  <Check className="h-3 w-3" strokeWidth={3} /> Done
+                </button>
+                {!isSnoozed && (
+                  <button onClick={() => onStatus("snooze")} className="flex items-center gap-1 rounded-[10px] border border-border bg-white/[0.04] px-3 py-[7px] text-[11.5px] font-semibold text-muted-foreground transition hover:bg-white/10 hover:text-white">
+                    <Clock className="h-3 w-3" /> Snooze
+                  </button>
+                )}
+              </>
+            )}
+          </span>
+        </div>
+      </div>
+    </motion.div>
   );
 }
